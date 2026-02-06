@@ -9,6 +9,9 @@ let currentPlayer = {
 let gameState = null;
 let roundNumber = 1;
 
+// Constants
+const MIN_PLAYERS_TO_START = 3;
+
 // Initialize SignalR connection
 async function initializeConnection() {
     connection = new signalR.HubConnectionBuilder()
@@ -87,17 +90,22 @@ async function initializeConnection() {
 
 // UI Functions
 function updateLobbyStatus(playerCount) {
-    const playersNeeded = 3;
-    const remaining = Math.max(0, playersNeeded - playerCount);
+    const remaining = Math.max(0, MIN_PLAYERS_TO_START - playerCount);
     
     let message = `<p>Players in room: ${playerCount}</p>`;
     
-    if (playerCount < playersNeeded) {
+    const startGameBtn = document.getElementById('startGameBtn');
+    if (!startGameBtn) {
+        console.error('Start Game button not found');
+        return;
+    }
+    
+    if (playerCount < MIN_PLAYERS_TO_START) {
         message += `<p>Waiting for ${remaining} more player${remaining !== 1 ? 's' : ''}...</p>`;
-        document.getElementById('startGameBtn').disabled = true;
+        startGameBtn.disabled = true;
     } else {
         message += `<p>Ready to start!</p>`;
-        document.getElementById('startGameBtn').disabled = false;
+        startGameBtn.disabled = false;
     }
     
     document.getElementById('lobbyStatus').innerHTML = message;
