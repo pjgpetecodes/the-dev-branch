@@ -49,7 +49,8 @@ public class GameHub : Hub
             await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
             
             // Notify all players in the room
-            await Clients.Group(roomId).SendAsync("PlayerJoined", player.Name, room.Players.Count);
+            var playerNames = room.Players.Select(p => p.Name).ToList();
+            await Clients.Group(roomId).SendAsync("PlayerJoined", player.Name, room.Players.Count, playerNames);
             await Clients.Group(roomId).SendAsync("GameStateUpdated", room);
             
             _logger.LogInformation($"Player {playerName} joined room {roomId}");
