@@ -9,6 +9,9 @@ let currentPlayer = {
 let gameState = null;
 let roundNumber = 1;
 
+// Constants
+const MIN_PLAYERS_TO_START = 3;
+
 // Initialize SignalR connection
 async function initializeConnection() {
     connection = new signalR.HubConnectionBuilder()
@@ -22,14 +25,20 @@ async function initializeConnection() {
         showLobbyStatus(`Room ${roomId} created! Waiting for players...`);
     });
 
-    connection.on("PlayerJoined", (playerName) => {
-        console.log("Player joined:", playerName);
-        showLobbyStatus(`${playerName} joined the room!`);
+    connection.on("PlayerJoined", (playerName, playerCount) => {
+        console.log("Player joined:", playerName, "Total players:", playerCount);
+        updateLobbyStatus(playerCount);
     });
 
     connection.on("GameStateUpdated", (state) => {
         console.log("Game state updated:", state);
         gameState = state;
+        
+        // Update lobby status if still in lobby
+        if (state.state === 0) { // GameState.Lobby
+            updateLobbyStatus(state.players.length);
+        }
+        
         updateGameDisplay();
     });
 
@@ -80,6 +89,28 @@ async function initializeConnection() {
 }
 
 // UI Functions
+function updateLobbyStatus(playerCount) {
+    const remaining = Math.max(0, MIN_PLAYERS_TO_START - playerCount);
+    
+    let message = `<p>Players in room: ${playerCount}</p>`;
+    
+    const startGameBtn = document.getElementById('startGameBtn');
+    if (!startGameBtn) {
+        console.error('Start Game button not found');
+        return;
+    }
+    
+    if (playerCount < MIN_PLAYERS_TO_START) {
+        message += `<p>Waiting for ${remaining} more player${remaining !== 1 ? 's' : ''}...</p>`;
+        startGameBtn.disabled = true;
+    } else {
+        message += `<p>Ready to start!</p>`;
+        startGameBtn.disabled = false;
+    }
+    
+    document.getElementById('lobbyStatus').innerHTML = message;
+}
+
 function showLobbyStatus(message) {
     document.getElementById('lobbyStatus').innerHTML = `<p>${message}</p>`;
 }
@@ -115,10 +146,7 @@ async function joinRoom() {
 
     try {
         await connection.invoke("JoinRoom", roomId, playerName);
-        showLobbyStatus(`Joined room ${roomId}! Waiting for game to start...`);
-        
-        // Enable the Start Game button after joining
-        document.getElementById('startGameBtn').disabled = false;
+        // The PlayerJoined event will handle updating the lobby status and button
     } catch (err) {
         console.error("Error joining room:", err);
         showError("Failed to join room");

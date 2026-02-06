@@ -42,11 +42,14 @@ public class GameHub : Hub
                 room = _gameService.GetRoom(roomId);
             }
 
+            if (room == null)
+                throw new InvalidOperationException("Failed to create or get room");
+
             var player = _gameService.AddPlayer(roomId, Context.ConnectionId, playerName);
             await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
             
             // Notify all players in the room
-            await Clients.Group(roomId).SendAsync("PlayerJoined", player.Name);
+            await Clients.Group(roomId).SendAsync("PlayerJoined", player.Name, room.Players.Count);
             await Clients.Group(roomId).SendAsync("GameStateUpdated", room);
             
             _logger.LogInformation($"Player {playerName} joined room {roomId}");
