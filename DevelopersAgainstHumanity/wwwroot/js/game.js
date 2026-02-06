@@ -215,10 +215,18 @@ function renderPlayers() {
         }
 
         const czarLabel = player.isCardCzar ? ' 👑' : '';
-        playerCard.innerHTML = `
-            <div style="font-weight: bold;">${player.name}${czarLabel}</div>
-            <div>Score: ${player.score}</div>
-        `;
+        
+        // Create name div
+        const nameDiv = document.createElement('div');
+        nameDiv.style.fontWeight = 'bold';
+        nameDiv.textContent = player.name + czarLabel;
+        
+        // Create score div
+        const scoreDiv = document.createElement('div');
+        scoreDiv.textContent = `Score: ${player.score}`;
+        
+        playerCard.appendChild(nameDiv);
+        playerCard.appendChild(scoreDiv);
         
         container.appendChild(playerCard);
 
@@ -329,7 +337,7 @@ function hideSubmittedCards() {
 function showWinnerDisplay(winnerName) {
     const display = document.getElementById('winnerDisplay');
     display.className = 'winner-display';
-    display.innerHTML = `🎉 ${winnerName} won this round! 🎉`;
+    display.textContent = `🎉 ${winnerName} won this round! 🎉`;
 }
 
 function hideWinnerDisplay() {
@@ -349,11 +357,24 @@ function hideNextRoundButton() {
 function showGameOver(winnerName) {
     const display = document.getElementById('gameOverDisplay');
     display.className = 'game-over';
-    display.innerHTML = `
-        <h2>🏆 Game Over! 🏆</h2>
-        <p style="font-size: 2rem; margin: 20px 0;">${winnerName} is the ultimate winner!</p>
-        <button class="btn-primary" onclick="location.reload()">Play Again</button>
-    `;
+    display.innerHTML = '';
+    
+    const h2 = document.createElement('h2');
+    h2.textContent = '🏆 Game Over! 🏆';
+    
+    const p = document.createElement('p');
+    p.style.fontSize = '2rem';
+    p.style.margin = '20px 0';
+    p.textContent = `${winnerName} is the ultimate winner!`;
+    
+    const button = document.createElement('button');
+    button.className = 'btn-primary';
+    button.textContent = 'Play Again';
+    button.onclick = () => location.reload();
+    
+    display.appendChild(h2);
+    display.appendChild(p);
+    display.appendChild(button);
 }
 
 function hideGameOver() {
