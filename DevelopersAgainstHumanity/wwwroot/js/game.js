@@ -118,9 +118,7 @@ async function joinRoom() {
         showLobbyStatus(`Joined room ${roomId}! Waiting for game to start...`);
         
         // Enable the Start Game button after joining
-        const startGameBtn = document.getElementById('startGameBtn');
-        startGameBtn.disabled = false;
-        startGameBtn.style.opacity = '1';
+        document.getElementById('startGameBtn').disabled = false;
     } catch (err) {
         console.error("Error joining room:", err);
         showError("Failed to join room");
