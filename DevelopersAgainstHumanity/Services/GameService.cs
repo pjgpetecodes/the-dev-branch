@@ -9,7 +9,7 @@ public interface IGameService
     Player AddPlayer(string roomId, string connectionId, string playerName);
     void RemovePlayer(string roomId, string connectionId);
     void StartGame(string roomId);
-    void SubmitCard(string roomId, string playerId, string cardId);
+    void SubmitCards(string roomId, string playerId, List<string> cardIds);
     void SelectWinner(string roomId, string winnerId);
     void NextRound(string roomId);
 }
@@ -154,7 +154,7 @@ public class GameService : IGameService
         }
     }
 
-    public void SubmitCard(string roomId, string playerId, string cardId)
+    public void SubmitCards(string roomId, string playerId, List<string> cardIds)
     {
         var room = GetRoom(roomId);
         if (room == null)
@@ -170,12 +170,27 @@ public class GameService : IGameService
         if (player.IsCardCzar)
             throw new InvalidOperationException("Card czar cannot submit cards");
 
-        var card = player.Hand.FirstOrDefault(c => c.Id == cardId);
-        if (card == null)
-            throw new InvalidOperationException("Card not in hand");
+        if (room.CurrentBlackCard == null)
+            throw new InvalidOperationException("No black card selected");
 
-        room.SubmittedCards[playerId] = cardId;
-        player.SelectedCardId = cardId;
+        if (cardIds == null || cardIds.Count == 0)
+            throw new InvalidOperationException("No cards selected");
+
+        if (cardIds.Count != room.CurrentBlackCard.PickCount)
+            throw new InvalidOperationException($"Must submit exactly {room.CurrentBlackCard.PickCount} card(s)");
+
+        if (cardIds.Distinct().Count() != cardIds.Count)
+            throw new InvalidOperationException("Cannot submit duplicate cards");
+
+        foreach (var cardId in cardIds)
+        {
+            var card = player.Hand.FirstOrDefault(c => c.Id == cardId);
+            if (card == null)
+                throw new InvalidOperationException("Card not in hand");
+        }
+
+        room.SubmittedCards[playerId] = new List<string>(cardIds);
+        player.SelectedCardIds = new List<string>(cardIds);
 
         // Check if all players (except czar) have submitted
         var nonCzarPlayers = room.Players.Where(p => !p.IsCardCzar).ToList();
@@ -223,16 +238,19 @@ public class GameService : IGameService
         // Remove played cards from hands
         foreach (var player in room.Players.Where(p => !p.IsCardCzar))
         {
-            if (player.SelectedCardId != null)
+            if (player.SelectedCardIds.Count > 0)
             {
-                var card = player.Hand.FirstOrDefault(c => c.Id == player.SelectedCardId);
-                if (card != null)
+                foreach (var selectedCardId in player.SelectedCardIds)
                 {
-                    player.Hand.Remove(card);
-                    // Deal a new card
-                    DealCards(player, 1);
+                    var card = player.Hand.FirstOrDefault(c => c.Id == selectedCardId);
+                    if (card != null)
+                    {
+                        player.Hand.Remove(card);
+                    }
                 }
-                player.SelectedCardId = null;
+                // Deal replacement cards
+                DealCards(player, player.SelectedCardIds.Count);
+                player.SelectedCardIds.Clear();
             }
         }
 

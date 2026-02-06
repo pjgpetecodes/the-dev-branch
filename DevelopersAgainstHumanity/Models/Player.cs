@@ -7,5 +7,5 @@ public class Player
     public int Score { get; set; }
     public List<WhiteCard> Hand { get; set; } = new();
     public bool IsCardCzar { get; set; }
-    public string? SelectedCardId { get; set; }
+    public List<string> SelectedCardIds { get; set; } = new();
 }

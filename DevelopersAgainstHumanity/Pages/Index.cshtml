@@ -269,6 +269,15 @@
             justify-content: center;
         }
 
+        .submitted-card-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
         /* Status Messages */
         #statusMessage {
             text-align: center;
@@ -454,6 +463,9 @@
                 <h2>Your Hand</h2>
                 <div class="cards-container" id="handContainer">
                     <p style="color: #fff;">Waiting for cards...</p>
+                </div>
+                <div style="text-align: center; margin-top: 12px;">
+                    <button id="submitCardsBtn" class="btn-primary hidden" onclick="submitSelectedCards()">Submit Cards</button>
                 </div>
             </div>
 

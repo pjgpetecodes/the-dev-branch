@@ -90,11 +90,11 @@ public class GameHub : Hub
         }
     }
 
-    public async Task SubmitCard(string roomId, string cardId)
+    public async Task SubmitCards(string roomId, List<string> cardIds)
     {
         try
         {
-            _gameService.SubmitCard(roomId, Context.ConnectionId, cardId);
+            _gameService.SubmitCards(roomId, Context.ConnectionId, cardIds);
             var room = _gameService.GetRoom(roomId);
             
             await Clients.Group(roomId).SendAsync("CardSubmitted", Context.ConnectionId);

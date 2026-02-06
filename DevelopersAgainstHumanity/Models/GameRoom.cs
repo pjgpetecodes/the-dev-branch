@@ -5,7 +5,7 @@ public class GameRoom
     public string RoomId { get; set; } = string.Empty;
     public List<Player> Players { get; set; } = new();
     public BlackCard? CurrentBlackCard { get; set; }
-    public Dictionary<string, string> SubmittedCards { get; set; } = new(); // PlayerId -> CardId
+    public Dictionary<string, List<string>> SubmittedCards { get; set; } = new(); // PlayerId -> CardIds
     public GameState State { get; set; } = GameState.Lobby;
     public int CurrentCzarIndex { get; set; }
     public string? WinningPlayerId { get; set; }

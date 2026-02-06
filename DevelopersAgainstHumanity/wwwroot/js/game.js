@@ -4,7 +4,8 @@ let currentRoomId = '';
 let currentPlayer = {
     hand: [],
     isCardCzar: false,
-    selectedCard: null
+    selectedCards: [],
+    hasSubmitted: false
 };
 let gameState = null;
 let roundNumber = 1;
@@ -62,6 +63,7 @@ async function initializeConnection() {
         console.log("Hand updated:", hand);
         currentPlayer.hand = hand;
         renderHand();
+        updateSubmitButtonState();
     });
 
     connection.on("CardSubmitted", (playerId) => {
@@ -77,7 +79,8 @@ async function initializeConnection() {
         console.log("Round started");
         roundNumber++;
         document.getElementById('roundNumber').textContent = roundNumber;
-        currentPlayer.selectedCard = null;
+        currentPlayer.selectedCards = [];
+        currentPlayer.hasSubmitted = false;
         hideWinnerDisplay();
         hideNextRoundButton();
     });
@@ -249,7 +252,8 @@ async function leaveRoom() {
     currentPlayer = {
         hand: [],
         isCardCzar: false,
-        selectedCard: null
+        selectedCards: [],
+        hasSubmitted: false
     };
     gameState = null;
     roundNumber = 1;
@@ -289,14 +293,63 @@ async function submitCard(cardId) {
         return;
     }
 
+    if (currentPlayer.hasSubmitted) {
+        showError("You have already submitted your cards");
+        return;
+    }
+
+    const pickCount = gameState?.currentBlackCard?.pickCount || 1;
+
+    if (currentPlayer.selectedCards.includes(cardId)) {
+        currentPlayer.selectedCards = currentPlayer.selectedCards.filter(id => id !== cardId);
+    } else {
+        if (currentPlayer.selectedCards.length >= pickCount) {
+            showError(`You can only select ${pickCount} card${pickCount !== 1 ? 's' : ''}`);
+            return;
+        }
+        currentPlayer.selectedCards.push(cardId);
+    }
+
+    renderHand();
+    updateSubmitButtonState();
+
+    if (pickCount === 1 && currentPlayer.selectedCards.length === 1) {
+        await submitSelectedCards();
+    }
+}
+
+async function submitSelectedCards() {
+    if (currentPlayer.isCardCzar) {
+        showError("Card Czar cannot submit cards!");
+        return;
+    }
+
+    if (gameState.state !== 1) { // GameState.Playing
+        showError("Cannot submit cards right now");
+        return;
+    }
+
+    if (currentPlayer.hasSubmitted) {
+        showError("You have already submitted your cards");
+        return;
+    }
+
+    const pickCount = gameState?.currentBlackCard?.pickCount || 1;
+
+    if (currentPlayer.selectedCards.length !== pickCount) {
+        showError(`Select ${pickCount} card${pickCount !== 1 ? 's' : ''} to submit`);
+        return;
+    }
+
     try {
-        currentPlayer.selectedCard = cardId;
-        await connection.invoke("SubmitCard", currentRoomId, cardId);
-        renderHand(); // Re-render to show selected state
-        showStatus("Card submitted! Waiting for other players...");
+        await connection.invoke("SubmitCards", currentRoomId, currentPlayer.selectedCards);
+        currentPlayer.hasSubmitted = true;
+        renderHand();
+        updateSubmitButtonState();
+        showStatus("Cards submitted! Waiting for other players...");
     } catch (err) {
-        console.error("Error submitting card:", err);
-        showError(err.message || "Failed to submit card");
+        console.error("Error submitting cards:", err);
+        showError(err.message || "Failed to submit cards");
     }
 }
 
@@ -336,6 +389,7 @@ function updateGameDisplay() {
 
     // Update game state specific UI
     updateGameStateUI();
+    updateSubmitButtonState();
 }
 
 function renderPlayers() {
@@ -393,11 +447,11 @@ function renderHand() {
         cardDiv.className = 'card white-card mini-card';
         cardDiv.textContent = card.text;
         
-        if (card.id === currentPlayer.selectedCard) {
+        if (currentPlayer.selectedCards.includes(card.id)) {
             cardDiv.classList.add('selected');
         }
         
-        if (currentPlayer.isCardCzar || currentPlayer.selectedCard) {
+        if (currentPlayer.isCardCzar || currentPlayer.hasSubmitted) {
             cardDiv.classList.add('submitted');
         } else {
             cardDiv.onclick = () => submitCard(card.id);
@@ -423,10 +477,15 @@ function updateGameStateUI() {
         case 1: // Playing
             if (currentPlayer.isCardCzar) {
                 showStatus("You are the Card Czar! Wait for players to submit their cards.");
-            } else if (currentPlayer.selectedCard) {
-                showStatus("Card submitted! Waiting for other players...");
+            } else if (currentPlayer.hasSubmitted) {
+                showStatus("Cards submitted! Waiting for other players...");
             } else {
-                showStatus("Select a card from your hand to play!");
+                const pickCount = gameState?.currentBlackCard?.pickCount || 1;
+                if (pickCount > 1) {
+                    showStatus(`Select ${pickCount} cards from your hand to play!`);
+                } else {
+                    showStatus("Select a card from your hand to play!");
+                }
             }
             break;
         case 2: // Judging
@@ -468,26 +527,54 @@ function renderSubmittedCards() {
         title.textContent = 'Submitted Cards:';
     }
 
-    Object.entries(gameState.submittedCards).forEach(([playerId, cardId]) => {
+    Object.entries(gameState.submittedCards).forEach(([playerId, cardIds]) => {
         const player = gameState.players.find(p => p.connectionId === playerId);
-        const card = player?.hand?.find(c => c.id === cardId);
-        
-        if (card) {
-            const cardDiv = document.createElement('div');
-            cardDiv.className = 'card white-card mini-card';
-            cardDiv.textContent = card.text;
-            
-            // Only Card Czar can click to select winner
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'submitted-card-group';
+
+        if (Array.isArray(cardIds)) {
+            cardIds.forEach(cardId => {
+                const card = player?.hand?.find(c => c.id === cardId);
+                if (card) {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = 'card white-card mini-card';
+                    cardDiv.textContent = card.text;
+                    groupDiv.appendChild(cardDiv);
+                }
+            });
+        }
+
+        if (groupDiv.children.length > 0) {
             if (currentPlayer.isCardCzar) {
-                cardDiv.onclick = () => selectWinner(playerId);
-                cardDiv.style.cursor = 'pointer';
+                groupDiv.onclick = () => selectWinner(playerId);
+                groupDiv.style.cursor = 'pointer';
             } else {
-                cardDiv.style.cursor = 'default';
+                groupDiv.style.cursor = 'default';
             }
-            
-            container.appendChild(cardDiv);
+
+            container.appendChild(groupDiv);
         }
     });
+}
+
+function updateSubmitButtonState() {
+    const button = document.getElementById('submitCardsBtn');
+    if (!button) return;
+
+    const pickCount = gameState?.currentBlackCard?.pickCount || 1;
+
+    if (currentPlayer.isCardCzar || gameState?.state !== 1) {
+        button.classList.add('hidden');
+        return;
+    }
+
+    if (pickCount <= 1) {
+        button.classList.add('hidden');
+        return;
+    }
+
+    button.classList.remove('hidden');
+    button.disabled = currentPlayer.hasSubmitted || currentPlayer.selectedCards.length !== pickCount;
 }
 
 function hideSubmittedCards() {
