@@ -115,7 +115,7 @@ function updateLobbyStatus(playerCount, playerNames) {
         message += `<p>Waiting for ${remaining} more player${remaining !== 1 ? 's' : ''}...</p>`;
         startGameBtn.disabled = true;
     } else {
-        message += `<p style="color: #90ee90;">Ready to start!</p>`;
+        message += `<p class="ready-status">Ready to start!</p>`;
         startGameBtn.disabled = false;
     }
     
@@ -136,8 +136,7 @@ function showPlayerJoinedMessage(playerName) {
     
     // Remove the message after 3 seconds
     setTimeout(() => {
-        messageDiv.style.transition = 'opacity 0.5s ease';
-        messageDiv.style.opacity = '0';
+        messageDiv.classList.add('fade-out');
         setTimeout(() => messageDiv.remove(), 500);
     }, 3000);
 }
