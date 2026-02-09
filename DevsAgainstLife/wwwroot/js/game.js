@@ -683,7 +683,7 @@ function renderHand() {
     container.innerHTML = '';
 
     if (currentPlayer.hand.length === 0) {
-        container.innerHTML = '<p style="color: #fff;">No cards yet...</p>';
+        container.innerHTML = '<p class="no-cards-message">No cards yet...</p>';
         return;
     }
 

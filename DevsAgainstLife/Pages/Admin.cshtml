@@ -106,6 +106,42 @@
             transform: translateY(-2px);
         }
 
+        .admin-verify-p {
+            margin-bottom: 15px;
+        }
+
+        .admin-control-p {
+            margin-bottom: 20px;
+        }
+
+        .admin-refresh-btn {
+            width: auto;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+        }
+
+        .btn-danger-inline {
+            width: auto;
+            padding: 12px 20px;
+        }
+
+        .no-cards-message {
+            color: #fff;
+        }
+
+        .room-state {
+            color: #aaa;
+        }
+
+        .delete-room-btn {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+
+        .rooms-error {
+            color: #dc3545;
+        }
+
         .btn-info {
             background: #17a2b8;
             color: white;
@@ -253,10 +289,10 @@
         <!-- Key Verification Section -->
         <div class="key-verification" id="keyVerification">
             <h3>Admin Key Required</h3>
-            <p style="margin-bottom: 15px;">Enter your admin key to access room management.</p>
+            <p class="admin-verify-p">Enter your admin key to access room management.</p>
             <div class="key-input-group">
                 <input type="password" id="adminKey" placeholder="Enter admin key" />
-                <button class="btn-danger" onclick="verifyAdminKey()" style="width: auto; padding: 12px 20px;">Verify</button>
+                <button class="btn-danger" onclick="verifyAdminKey()">Verify</button>
             </div>
             <div id="keyStatus"></div>
         </div>
@@ -269,7 +305,7 @@
         <!-- Clear All Rooms Section -->
         <div class="control-section">
             <h2>Clear All Rooms</h2>
-            <p style="margin-bottom:20px;">This will remove all active rooms from the system.</p>
+            <p class="admin-control-p">This will remove all active rooms from the system.</p>
             
             <button class="btn-danger" onclick="clearAllRooms()" id="clearAllBtn" disabled>Clear All Rooms</button>
             
@@ -279,9 +315,9 @@
         <!-- Active Rooms Section -->
         <div class="control-section">
             <h2>Active Rooms</h2>
-            <p style="margin-bottom:20px;">Manage individual rooms or view their details.</p>
+            <p class="admin-control-p">Manage individual rooms or view their details.</p>
             
-            <button class="btn-secondary" onclick="loadRooms()" id="refreshBtn" style="width: auto; padding: 12px 20px; margin-bottom: 20px;" disabled>Refresh Rooms</button>
+            <button class="btn-secondary admin-refresh-btn" onclick="loadRooms()" id="refreshBtn" disabled>Refresh Rooms</button>
             
             <div class="rooms-list" id="roomsList">
                 <div class="no-rooms">Loading rooms...</div>
@@ -383,7 +419,7 @@
                 <div class="room-card">
                     <div class="room-card-header">
                         <div class="room-id">Room: ${room.roomId}</div>
-                        <div style="color: #aaa;">State: ${room.state}</div>
+                        <div class="room-state">State: ${room.state}</div>
                     </div>
                     <div class="room-info">
                         Round: ${room.currentRound} / ${room.totalRounds}
@@ -394,7 +430,7 @@
                     </div>
                     <div class="room-actions">
                         <button class="btn-info" onclick="copyRoomLink('${room.roomId}')">Copy Join Link</button>
-                        <button class="btn-danger" style="padding: 8px 15px; font-size: 0.9rem;" onclick="deleteRoom('${room.roomId}')">Delete Room</button>
+                        <button class="btn-danger delete-room-btn" onclick="deleteRoom('${room.roomId}')">Delete Room</button>
                     </div>
                 </div>
             `).join('');
@@ -402,7 +438,7 @@
 
         function showRoomsError(message) {
             const roomsList = document.getElementById('roomsList');
-            roomsList.innerHTML = `<div class="no-rooms" style="color: #dc3545;">${message}</div>`;
+            roomsList.innerHTML = `<div class="no-rooms rooms-error">${message}</div>`;
         }
 
         async function clearAllRooms() {
