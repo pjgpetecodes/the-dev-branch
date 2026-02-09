@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: 'dev-against-humanity-6cz2yvtzgjww2'
+  AZURE_WEBAPP_NAME: 'devs-against-life-ospq4bdlaohjk'
   AZURE_WEBAPP_PACKAGE_PATH: './DevsAgainstLife'
   DOTNET_VERSION: '8.0.x'
 
