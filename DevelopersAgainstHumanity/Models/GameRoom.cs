@@ -5,6 +5,8 @@ public class GameRoom
     public string RoomId { get; set; } = string.Empty;
     public string? CreatorConnectionId { get; set; }
     public List<Player> Players { get; set; } = new();
+    public DateTime LastActivityUtc { get; set; } = DateTime.UtcNow;
+    public DateTime? LastIdleWarningUtc { get; set; }
     public BlackCard? CurrentBlackCard { get; set; }
     public Dictionary<string, List<string>> SubmittedCards { get; set; } = new(); // PlayerId -> CardIds
     public GameState State { get; set; } = GameState.Lobby;

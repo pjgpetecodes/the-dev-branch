@@ -51,6 +51,7 @@ public class GameHub : Hub
                 throw new InvalidOperationException("Must have at least 1 round");
 
             room.TotalRounds = totalRounds;
+            _gameService.TouchRoom(roomId);
             await Clients.Group(roomId).SendAsync("GameStateUpdated", room);
             _logger.LogInformation($"Rounds updated to {totalRounds} in room {roomId}");
         }
@@ -259,5 +260,20 @@ public class GameHub : Hub
     public async Task NotifyRoomDeleted(string roomId)
     {
         await Clients.Group(roomId).SendAsync("RoomDeleted", "This room has been deleted by an admin.");
+    }
+
+    public async Task ExtendRoomIdle(string roomId)
+    {
+        try
+        {
+            roomId = NormalizeRoomId(roomId);
+            _gameService.TouchRoom(roomId);
+            await Clients.Group(roomId).SendAsync("RoomIdleExtended", "Room activity extended.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error extending room idle timer");
+            await Clients.Caller.SendAsync("Error", ex.Message);
+        }
     }
 }

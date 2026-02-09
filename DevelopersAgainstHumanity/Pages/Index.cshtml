@@ -502,7 +502,7 @@
             </div>
             <div class="input-group">
                 <label for="roomId">Room ID:</label>
-                <input type="text" id="roomId" placeholder="Enter or create room ID" />
+                <input type="number" id="roomId" placeholder="Enter or create room ID" min="1" step="1" inputmode="numeric" />
             </div>
             <button id="joinRoomBtn" class="btn-primary" onclick="joinRoom()">Join Room</button>
             <button id="leaveRoomBtn" class="btn-danger hidden" onclick="leaveRoom()">Leave Room</button>
@@ -551,6 +551,19 @@
                     </div>
                     <div class="modal-actions">
                         <button id="confirmNameBtn" class="btn-primary" onclick="confirmNameEntry()">Join Room</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Idle Warning Modal -->
+            <div id="idleWarningModal" class="modal-overlay hidden">
+                <div class="modal-content">
+                    <h3>Room Inactivity Warning</h3>
+                    <p style="margin-bottom: 10px;">
+                        This room will close in <strong><span id="idleWarningCountdown">60</span> seconds</strong> due to inactivity.
+                    </p>
+                    <div class="modal-actions">
+                        <button id="extendRoomBtn" class="btn-primary" onclick="extendRoomIdle()">Keep Room Active</button>
                     </div>
                 </div>
             </div>

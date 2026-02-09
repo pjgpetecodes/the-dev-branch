@@ -12,6 +12,7 @@ public interface IGameService
     void SubmitCards(string roomId, string playerId, List<string> cardIds);
     void SelectWinner(string roomId, string winnerId);
     void NextRound(string roomId);
+    void TouchRoom(string roomId);
     int ClearRooms();
     IEnumerable<GameRoom> GetAllRooms();
     bool DeleteRoom(string roomId);
@@ -58,6 +59,8 @@ public class GameService : IGameService
             room.TotalRounds = totalRounds.Value;
         }
 
+        MarkActivity(room);
+
         _rooms[roomId] = room;
         _logger.LogInformation($"Created room {roomId} with {room.TotalRounds} rounds");
         return room;
@@ -94,6 +97,7 @@ public class GameService : IGameService
         };
 
         room.Players.Add(player);
+        MarkActivity(room);
         _logger.LogInformation($"Player {playerName} joined room {roomId}");
 
         return player;
@@ -108,6 +112,7 @@ public class GameService : IGameService
         if (player != null)
         {
             room.Players.Remove(player);
+            MarkActivity(room);
             _logger.LogInformation($"Player {player.Name} left room {roomId}");
 
             // If no players left, remove room
@@ -146,6 +151,7 @@ public class GameService : IGameService
         }
 
         StartRound(room);
+        MarkActivity(room);
         _logger.LogInformation($"Game started in room {roomId}");
     }
 
@@ -229,6 +235,8 @@ public class GameService : IGameService
         {
             room.State = GameState.Judging;
         }
+
+        MarkActivity(room);
     }
 
     public void SelectWinner(string roomId, string winnerId)
@@ -253,6 +261,8 @@ public class GameService : IGameService
         {
             room.State = GameState.GameOver;
         }
+
+        MarkActivity(room);
 
         _logger.LogInformation($"Player {winner.Name} won the round in room {roomId}");
     }
@@ -304,6 +314,7 @@ public class GameService : IGameService
             // No tie, game is over
             room.WinningPlayerId = topPlayers[0].ConnectionId;
             room.State = GameState.GameOver;
+            MarkActivity(room);
             return;
         }
 
@@ -313,6 +324,16 @@ public class GameService : IGameService
         room.IsDeciderRound = false;
         
         StartRound(room);
+        MarkActivity(room);
+    }
+
+    public void TouchRoom(string roomId)
+    {
+        var room = GetRoom(roomId);
+        if (room != null)
+        {
+            MarkActivity(room);
+        }
     }
 
     public int ClearRooms()
@@ -342,5 +363,11 @@ public class GameService : IGameService
             return true;
         }
         return false;
+    }
+
+    private static void MarkActivity(GameRoom room)
+    {
+        room.LastActivityUtc = DateTime.UtcNow;
+        room.LastIdleWarningUtc = null;
     }
 }

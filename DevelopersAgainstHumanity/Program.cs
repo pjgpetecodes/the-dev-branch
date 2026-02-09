@@ -11,6 +11,7 @@ builder.Services.AddSignalR();
 // Register application services
 builder.Services.AddSingleton<ICardService, CardService>();
 builder.Services.AddSingleton<IGameService, GameService>();
+builder.Services.AddHostedService<RoomCleanupService>();
 
 var app = builder.Build();
 

@@ -16,6 +16,7 @@ let hasJoinedRoom = false;
 let hasPromptedRounds = false;
 let currentPlayerName = '';
 let joinedViaLink = false;
+let idleWarningTimer = null;
 
 // Constants
 const MIN_PLAYERS_TO_START = 3;
@@ -120,6 +121,7 @@ async function initializeConnection() {
         console.log("Room deleted:", message);
         console.log("Current room ID:", currentRoomId);
         console.log("Has joined room:", hasJoinedRoom);
+        hideIdleWarningModal();
         showError(message);
         // Reset game state and return to lobby/join screen
         setTimeout(() => {
@@ -151,6 +153,19 @@ async function initializeConnection() {
         }, 2000);
     });
 
+    connection.on("RoomIdleWarning", (secondsRemaining) => {
+        if (!hasJoinedRoom) {
+            return;
+        }
+
+        showIdleWarningModal(secondsRemaining);
+    });
+
+    connection.on("RoomIdleExtended", (message) => {
+        hideIdleWarningModal();
+        showStatus(message || "Room activity extended.");
+    });
+
     // Start connection
     try {
         await connection.start();
@@ -159,6 +174,59 @@ async function initializeConnection() {
     } catch (err) {
         console.error("SignalR Connection Error:", err);
         showError("Failed to connect to game server. Please refresh the page.");
+    }
+}
+
+function showIdleWarningModal(secondsRemaining) {
+    const modal = document.getElementById('idleWarningModal');
+    const countdown = document.getElementById('idleWarningCountdown');
+
+    if (!modal || !countdown) {
+        return;
+    }
+
+    let remaining = Math.max(0, Number(secondsRemaining) || 0);
+    countdown.textContent = `${remaining}`;
+    modal.classList.remove('hidden');
+
+    if (idleWarningTimer) {
+        clearInterval(idleWarningTimer);
+    }
+
+    idleWarningTimer = setInterval(() => {
+        remaining = Math.max(0, remaining - 1);
+        countdown.textContent = `${remaining}`;
+
+        if (remaining <= 0) {
+            clearInterval(idleWarningTimer);
+            idleWarningTimer = null;
+        }
+    }, 1000);
+}
+
+function hideIdleWarningModal() {
+    const modal = document.getElementById('idleWarningModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+
+    if (idleWarningTimer) {
+        clearInterval(idleWarningTimer);
+        idleWarningTimer = null;
+    }
+}
+
+async function extendRoomIdle() {
+    if (!currentRoomId) {
+        return;
+    }
+
+    try {
+        await connection.invoke("ExtendRoomIdle", currentRoomId);
+        hideIdleWarningModal();
+    } catch (err) {
+        console.error("Failed to extend room idle:", err);
+        showError(err.message || "Failed to extend room activity.");
     }
 }
 
@@ -264,8 +332,14 @@ function validateRoomId(roomId) {
         return false;
     }
 
-    if (isNegativeRoomId(roomId)) {
-        showError("Room ID cannot be a negative number");
+    if (!/^\d+$/.test(roomId)) {
+        showError("Room ID must be a positive number");
+        return false;
+    }
+
+    const numeric = Number(roomId);
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+        showError("Room ID must be a positive number");
         return false;
     }
 
