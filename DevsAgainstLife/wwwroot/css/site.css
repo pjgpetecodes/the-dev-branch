@@ -73,11 +73,48 @@ body {
   padding: 20px;
 }
 
-h1 {
-  text-align: center;
-  font-size: 3rem;
-  margin: 20px 0;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+.navbar-container-custom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.navbar-center-brand {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.navbar-menu-right {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.navbar-brand-fancy {
+  font-size: 3.5rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #00d4ff, #6a00ff, #ff00ff, #00d4ff);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 8px rgba(106, 0, 255, 0.3));
+  animation: gradientShift 8s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* Lobby Styles */
