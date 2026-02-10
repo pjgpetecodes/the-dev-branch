@@ -65,7 +65,6 @@ async function initializeConnection() {
             showRoundsSelector();
         }
 
-        updateShareLink();
         updateRoundDisplay();
         updateWelcomeHeader();
         
@@ -76,6 +75,7 @@ async function initializeConnection() {
         }
         
         updateGameDisplay();
+        updateShareLink(); // Call after updateGameDisplay to ensure state is ready
     });
 
     connection.on("GameStarted", () => {
@@ -473,6 +473,7 @@ async function joinRoom() {
         hasJoinedRoom = true;
         disableJoinControls();
         updateWelcomeHeader();
+        updateShareLink(); // Show share link even if GameStateUpdated hasn't fired yet
         // The PlayerJoined event will handle updating the lobby status and button
         return true;
     } catch (err) {
@@ -827,6 +828,22 @@ function renderHand() {
     });
 }
 
+function getPlayerSubmissionCount() {
+    if (!gameState) return { total: 0, submitted: 0, remaining: 0 };
+    
+    // Count total players who need to submit (everyone except the Card Czar)
+    const totalPlayers = gameState.players.length - 1; // Exclude Card Czar
+    
+    // Count players who have submitted (check if they have selectedCardIds)
+    const submittedPlayers = gameState.players.filter(p => !p.isCardCzar && p.selectedCardIds && p.selectedCardIds.length > 0).length;
+    
+    return {
+        total: totalPlayers,
+        submitted: submittedPlayers,
+        remaining: totalPlayers - submittedPlayers
+    };
+}
+
 function updateGameStateUI() {
     if (!gameState) return;
 
@@ -842,9 +859,15 @@ function updateGameStateUI() {
             break;
         case 1: // Playing
             if (currentPlayer.isCardCzar) {
-                showStatus("You are the Card Czar! Wait for players to submit their cards.");
+                const playerCount = getPlayerSubmissionCount();
+                if (playerCount.remaining > 0) {
+                    showStatus(`You are the Card Czar! Waiting for ${playerCount.remaining} out of ${playerCount.total} player${playerCount.total !== 1 ? 's' : ''} to submit...`);
+                } else {
+                    showStatus("You are the Card Czar! All players have submitted. Time to choose!");
+                }
             } else if (currentPlayer.hasSubmitted) {
-                showStatus("Cards submitted! Waiting for other players...");
+                const playerCount = getPlayerSubmissionCount();
+                showStatus(`Cards submitted! Waiting for ${playerCount.remaining} out of ${playerCount.total} player${playerCount.total !== 1 ? 's' : ''}...`);
             } else {
                 const pickCount = gameState?.currentBlackCard?.pickCount || 1;
                 if (pickCount > 1) {
@@ -1138,7 +1161,10 @@ function updateShareLink() {
     const shareLinkSection = document.getElementById('shareLinkSection');
     const shareLinkInput = document.getElementById('shareLinkInput');
     
-    if (currentRoomId && gameState?.state === 0) {
+    // Show share link whenever we have a room ID and have joined, and either:
+    // - gameState exists and we're in lobby, OR
+    // - gameState doesn't exist yet but we just joined (it will arrive shortly)
+    if (hasJoinedRoom && currentRoomId && (!gameState || gameState.state === 0)) {
         const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
         shareLinkInput.value = shareUrl;
         shareLinkSection.classList.remove('hidden');
