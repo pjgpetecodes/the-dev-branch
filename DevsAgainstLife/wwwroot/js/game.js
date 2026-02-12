@@ -72,9 +72,34 @@ async function initializeConnection() {
         if (state.state === 0) { // GameState.Lobby
             const playerNames = state.players.map(p => p.name);
             updateLobbyStatus(state.players.length, playerNames);
+        } else {
+            // If game is active (not in lobby), show game board
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('gameBoard').style.display = 'block';
+            
+            // Extract current player's data from game state (needed when rejoining mid-game)
+            const currentPlayerData = state.players.find(p => p.connectionId === connection.connectionId);
+            if (currentPlayerData) {
+                // Set hand
+                if (currentPlayerData.hand && Array.isArray(currentPlayerData.hand)) {
+                    currentPlayer.hand = currentPlayerData.hand;
+                    console.log("Restored hand on rejoin:", currentPlayer.hand);
+                }
+                
+                // Set card czar status
+                currentPlayer.isCardCzar = currentPlayerData.isCardCzar || false;
+                
+                // Restore selected cards and submission status from gameState.submittedCards
+                if (state.submittedCards && state.submittedCards[connection.connectionId]) {
+                    currentPlayer.selectedCards = state.submittedCards[connection.connectionId];
+                    currentPlayer.hasSubmitted = true;
+                    console.log("Restored selected cards on rejoin:", currentPlayer.selectedCards);
+                }
+            }
         }
         
         updateGameDisplay();
+        renderHand(); // Render hand after restoring data (needed when rejoining mid-game)
         updateShareLink(); // Call after updateGameDisplay to ensure state is ready
     });
 
@@ -394,6 +419,27 @@ function clearNameError(target) {
     }
 }
 
+function setRoomIdError(message) {
+    const errorText = message || 'Please enter a valid Room ID';
+    const roomIdError = document.getElementById('roomIdErrorMain');
+    const roomIdInput = document.getElementById('roomId');
+    if (roomIdError && roomIdInput) {
+        roomIdError.textContent = errorText;
+        roomIdError.classList.remove('hidden');
+        roomIdInput.classList.add('input-error');
+    }
+}
+
+function clearRoomIdError() {
+    const roomIdError = document.getElementById('roomIdErrorMain');
+    const roomIdInput = document.getElementById('roomId');
+    if (roomIdError && roomIdInput) {
+        roomIdError.textContent = '';
+        roomIdError.classList.add('hidden');
+        roomIdInput.classList.remove('input-error');
+    }
+}
+
 function getJoinErrorMessage(err) {
     if (!err) {
         return '';
@@ -428,18 +474,18 @@ function isNegativeRoomId(roomId) {
 
 function validateRoomId(roomId) {
     if (!roomId) {
-        showError("Please enter a room ID");
+        setRoomIdError("Please enter a room ID");
         return false;
     }
 
     if (!/^\d+$/.test(roomId)) {
-        showError("Room ID must be a positive number");
+        setRoomIdError("Room ID must be a positive number");
         return false;
     }
 
     const numeric = Number(roomId);
     if (!Number.isFinite(numeric) || numeric <= 0) {
-        showError("Room ID must be a positive number");
+        setRoomIdError("Room ID must be a positive number");
         return false;
     }
 
@@ -452,6 +498,7 @@ async function joinRoom() {
 
     clearNameError('main');
     clearNameError('modal');
+    clearRoomIdError();
 
     if (!playerName) {
         setNameError('main', 'Please enter your name.');
@@ -1051,6 +1098,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalNameInput = document.getElementById('modalPlayerName');
     if (modalNameInput) {
         modalNameInput.addEventListener('input', () => clearNameError('modal'));
+    }
+
+    const roomIdInput = document.getElementById('roomId');
+    if (roomIdInput) {
+        roomIdInput.addEventListener('input', () => clearRoomIdError());
+    }
+});
+
+// Warn players if they try to leave during an active game
+window.addEventListener('beforeunload', (e) => {
+    // Only warn if in an active game (not in lobby)
+    if (gameState && gameState.state !== 0 && hasJoinedRoom) {
+        // Modern browsers ignore the message and show their own, but we return it for compatibility
+        const warningMessage = 'You are in the middle of a game. Are you sure you want to leave?';
+        e.preventDefault();
+        e.returnValue = warningMessage;
+        return warningMessage;
     }
 });
 

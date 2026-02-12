@@ -30,7 +30,10 @@ body {
   border-radius: 4px;
   font-weight: 500;
   width: 100%;
+  max-width: 600px;
   box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .name-error {
