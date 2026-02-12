@@ -17,6 +17,8 @@ public class GameRoom
     public int TotalRounds { get; set; } = 7;
     public int CurrentRound { get; set; } = 0;
     public bool IsDeciderRound { get; set; } = false;
+    public HashSet<string> RemovedPlayerConnectionIds { get; set; } = new(); // Players who left mid-game and cannot rejoin
+    public string? PlayerWhoLeftName { get; set; } // Name of current player who left mid-game (for waiting state)
 }
 
 public enum GameState

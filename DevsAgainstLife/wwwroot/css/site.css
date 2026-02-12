@@ -521,6 +521,33 @@ button:disabled {
   margin-top: 15px;
 }
 
+.modal-actions-creator {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+}
+
+.modal-actions-creator button {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.modal-actions-creator button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-actions-creator button:active {
+  transform: translateY(0);
+}
+
 /* Welcome Header */
 #welcomeHeader {
   text-align: center;

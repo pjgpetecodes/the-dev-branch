@@ -168,6 +168,99 @@ async function initializeConnection() {
         showError(message);
     });
 
+    connection.on("PlayerLeftMidGame", (playerName, leftConnectionId, creatorConnectionId) => {
+        console.log("Player left mid-game:", playerName);
+        console.log("Current connection ID:", connection.connectionId);
+        console.log("Creator connection ID:", creatorConnectionId);
+        
+        const isCreator = connection.connectionId === creatorConnectionId;
+        console.log("Is current player the creator?", isCreator);
+        
+        if (isCreator) {
+            // Show creator modal with action buttons
+            console.log("Showing creator modal");
+            const nameEl = document.getElementById('leftPlayerNameCreator');
+            const modalEl = document.getElementById('playerLeftCreatorModal');
+            console.log("Name element found:", !!nameEl);
+            console.log("Modal element found:", !!modalEl);
+            
+            if (nameEl) nameEl.textContent = playerName;
+            if (modalEl) {
+                modalEl.classList.remove('hidden');
+                console.log("Modal classes:", modalEl.className);
+            }
+        } else {
+            // Show non-creator modal (waiting message)
+            console.log("Showing non-creator modal");
+            const nameEl = document.getElementById('leftPlayerName');
+            const modalEl = document.getElementById('playerLeftModal');
+            console.log("Name element found:", !!nameEl);
+            console.log("Modal element found:", !!modalEl);
+            
+            if (nameEl) nameEl.textContent = playerName;
+            if (modalEl) {
+                modalEl.classList.remove('hidden');
+                console.log("Modal classes:", modalEl.className);
+            }
+        }
+    });
+
+    connection.on("PlayerRejoinedMidGame", (playerName) => {
+        console.log("Player rejoined mid-game:", playerName);
+        const modal1 = document.getElementById('playerLeftModal');
+        const modal2 = document.getElementById('playerLeftCreatorModal');
+        console.log("playerLeftModal element found:", !!modal1);
+        console.log("playerLeftCreatorModal element found:", !!modal2);
+        
+        if (modal1) {
+            console.log("Modal 1 before - hidden?", modal1.classList.contains('hidden'));
+            modal1.classList.add('hidden');
+            console.log("Modal 1 after - hidden?", modal1.classList.contains('hidden'));
+        }
+        if (modal2) {
+            console.log("Modal 2 before - hidden?", modal2.classList.contains('hidden'));
+            modal2.classList.add('hidden');
+            console.log("Modal 2 after - hidden?", modal2.classList.contains('hidden'));
+        }
+        
+        showStatus(`${playerName} has returned! Game continues...`);
+    });
+
+    connection.on("WaitingForPlayerReturn", () => {
+        console.log("Waiting for player to return");
+        if (document.getElementById('playerLeftCreatorModal').classList.contains('hidden') === false) {
+            // Update creator modal to show waiting status
+            document.getElementById('playerLeftCreatorModal').classList.add('hidden');
+        }
+    });
+
+    connection.on("RoundRestarted", () => {
+        console.log("Round restarted");
+        currentPlayer.selectedCards = [];
+        currentPlayer.hasSubmitted = false;
+        hideWinnerDisplay();
+        hideNextRoundButton();
+        updateRoundDisplay();
+        updateWelcomeHeader();
+        document.getElementById('playerLeftModal').classList.add('hidden');
+        document.getElementById('playerLeftCreatorModal').classList.add('hidden');
+        showStatus("Round restarted!");
+    });
+
+    connection.on("GameRestarted", () => {
+        console.log("Game restarted");
+        currentPlayer.selectedCards = [];
+        currentPlayer.hasSubmitted = false;
+        roundNumber = 1;
+        hideWinnerDisplay();
+        hideNextRoundButton();
+        updateRoundDisplay();
+        updateWelcomeHeader();
+        document.getElementById('playerLeftModal').classList.add('hidden');
+        document.getElementById('playerLeftCreatorModal').classList.add('hidden');
+        showStatus("Game restarted!");
+    });
+
     connection.on("RoomDeleted", (message) => {
         console.log("Room deleted:", message);
         console.log("Current room ID:", currentRoomId);
@@ -665,6 +758,42 @@ async function leaveRoom() {
     updateWelcomeHeader();
     
     console.log("Left room");
+}
+
+async function handleWait() {
+    if (!currentRoomId) return;
+
+    try {
+        await connection.invoke("WaitForPlayerReturn", currentRoomId);
+        console.log("Waiting for player to return");
+    } catch (err) {
+        console.error("Error waiting for player return:", err);
+        showError(err.message || "Failed to wait for player");
+    }
+}
+
+async function handleRestartRound() {
+    if (!currentRoomId) return;
+
+    try {
+        await connection.invoke("RestartRound", currentRoomId);
+        console.log("Round restarted by room creator");
+    } catch (err) {
+        console.error("Error restarting round:", err);
+        showError(err.message || "Failed to restart round");
+    }
+}
+
+async function handleRestartGame() {
+    if (!currentRoomId) return;
+
+    try {
+        await connection.invoke("RestartGame", currentRoomId);
+        console.log("Game restarted by room creator");
+    } catch (err) {
+        console.error("Error restarting game:", err);
+        showError(err.message || "Failed to restart game");
+    }
 }
 
 async function startGame() {

@@ -159,6 +159,38 @@
                 <button id="nextRoundBtn" class="btn-primary hidden" onclick="nextRound()">Next Round</button>
             </div>
         </div>
+
+        <!-- Player Left Mid-Game Modals -->
+        <!-- Player Left Mid-Game Modal (for non-creators) -->
+        <div id="playerLeftModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h3>Player Left</h3>
+                <p class="modal-description">
+                    <strong id="leftPlayerName"></strong> has left the game.
+                </p>
+                <p class="modal-description" id="creatorWaitingMessage">
+                    The room creator is deciding what to do...
+                </p>
+            </div>
+        </div>
+
+        <!-- Player Left Mid-Game Modal (for room creator) -->
+        <div id="playerLeftCreatorModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h3>Player Left</h3>
+                <p class="modal-description">
+                    <strong id="leftPlayerNameCreator"></strong> has left the game!
+                </p>
+                <p class="modal-description">
+                    What would you like to do?
+                </p>
+                <div class="modal-actions-creator">
+                    <button id="waitBtn" class="btn-secondary" onclick="handleWait()">Wait for Return</button>
+                    <button id="restartRoundBtn" class="btn-secondary" onclick="handleRestartRound()">Restart Round</button>
+                    <button id="restartGameBtn" class="btn-secondary" onclick="handleRestartGame()">Restart Game</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
