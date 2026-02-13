@@ -42,8 +42,7 @@
                 <h2 class="how-to-play-title">How to Play:</h2>
                 <ol class="how-to-play-list">
                     <li>Enter your name</li>
-                    <li>Create a new room by entering a unique Room ID, or join an existing room</li>
-                    <li>Click "Join Room" to enter the game lobby</li>
+                    <li>Create a new room or join an existing room with a code</li>
                     <li>Wait for at least 3 players to join</li>
                     <li>Click "Start Game" to begin playing</li>
                 </ol>
@@ -53,12 +52,22 @@
                 <label for="playerName">Enter a Unique Username:</label>
                 <input type="text" id="playerName" placeholder="Enter your name" />
             </div>
-            <div class="input-group">
-                <div id="roomIdErrorMain" class="name-error hidden"></div>
-                <label for="roomId">Room ID:</label>
-                <input type="number" id="roomId" placeholder="Enter or create room ID" min="1" step="1" inputmode="numeric" />
+            
+            <!-- Create or Join Room Section -->
+            <div class="room-options">
+                <button id="createRoomBtn" class="btn-primary btn-large" onclick="createRoom()">Create Room</button>
+                
+                <!-- Join Room Section -->
+                <div class="join-room-section">
+                    <div class="input-group">
+                        <div id="roomIdErrorMain" class="name-error hidden"></div>
+                        <label for="roomCode">Enter Room Code:</label>
+                        <input type="text" id="roomCode" placeholder="5-character code" maxlength="5" style="text-transform: uppercase;" />
+                    </div>
+                    <button id="joinRoomBtn" class="btn-primary" onclick="joinRoom()">Join Room</button>
+                </div>
             </div>
-            <button id="joinRoomBtn" class="btn-primary" onclick="joinRoom()">Join Room</button>
+            
             <button id="leaveRoomBtn" class="btn-danger hidden" onclick="leaveRoom()">Leave Room</button>
             <button id="startGameBtn" class="btn-secondary" onclick="startGame()" disabled>Start Game</button>
             

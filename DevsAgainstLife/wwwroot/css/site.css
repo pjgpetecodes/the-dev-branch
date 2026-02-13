@@ -332,6 +332,42 @@ button:disabled {
   box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
 }
 
+/* Room Options Section */
+.room-options {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.btn-large {
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  width: 100%;
+}
+
+.join-room-section {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.join-room-section .input-group {
+  margin-bottom: 10px;
+}
+
+.join-room-section .input-group:last-child {
+  margin-bottom: 0;
+}
+
+.join-room-section input[type="text"] {
+  text-transform: uppercase;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
 /* Game Board Styles */
 #gameBoard {
   display: none;

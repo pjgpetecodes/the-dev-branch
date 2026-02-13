@@ -35,11 +35,13 @@ public class GameService : IGameService
     private static string NormalizeRoomId(string roomId)
     {
         if (string.IsNullOrWhiteSpace(roomId))
-            throw new InvalidOperationException("Room ID is required");
+            throw new InvalidOperationException("Room code is required");
 
-        var trimmed = roomId.Trim();
-        if (int.TryParse(trimmed, out var numeric) && numeric < 0)
-            throw new InvalidOperationException("Room ID cannot be a negative number");
+        var trimmed = roomId.Trim().ToUpper();
+        
+        // Validate: 5 characters, alphanumeric only
+        if (trimmed.Length != 5 || !System.Text.RegularExpressions.Regex.IsMatch(trimmed, "^[A-Z0-9]{5}$"))
+            throw new InvalidOperationException($"Room code must be exactly 5 alphanumeric characters. Got: '{trimmed}' (length: {trimmed.Length})");
 
         return trimmed;
     }
@@ -47,9 +49,11 @@ public class GameService : IGameService
     public GameRoom CreateRoom(string roomId, int? totalRounds = null)
     {
         roomId = NormalizeRoomId(roomId);
+        _logger.LogInformation($"[GameService.CreateRoom] Creating room: {roomId}");
 
         if (_rooms.ContainsKey(roomId))
         {
+            _logger.LogWarning($"[GameService.CreateRoom] Room {roomId} already exists, returning existing room");
             return _rooms[roomId];
         }
 
@@ -62,7 +66,7 @@ public class GameService : IGameService
         MarkActivity(room);
 
         _rooms[roomId] = room;
-        _logger.LogInformation($"Created room {roomId} with {room.TotalRounds} rounds");
+        _logger.LogInformation($"[GameService.CreateRoom] Room {roomId} created with {room.TotalRounds} rounds");
         return room;
     }
 
@@ -73,12 +77,20 @@ public class GameService : IGameService
 
     public Player AddPlayer(string roomId, string connectionId, string playerName, bool allowRejoin = false)
     {
+        _logger.LogInformation($"[GameService.AddPlayer] START - roomId: {roomId}, playerName: {playerName}, connectionId: {connectionId}");
+        
         var room = GetRoom(roomId);
         if (room == null)
+        {
+            _logger.LogError($"[GameService.AddPlayer] Room {roomId} not found");
             throw new InvalidOperationException($"Room {roomId} not found");
+        }
 
         if (room.Players.Any(p => p.ConnectionId == connectionId))
+        {
+            _logger.LogWarning($"[GameService.AddPlayer] Player already in room");
             throw new InvalidOperationException("Player already in room");
+        }
 
         // Check if player with this name already exists
         var existingPlayer = room.Players.FirstOrDefault(p => p.Name == playerName);
@@ -89,27 +101,37 @@ public class GameService : IGameService
             {
                 // Only allow reconnect if game is in progress
                 if (room.State == GameState.Lobby)
+                {
+                    _logger.LogWarning($"[GameService.AddPlayer] Name already taken");
                     throw new InvalidOperationException("Name already taken");
+                }
                 
                 // Game in progress - allow reconnect
                 existingPlayer.ConnectionId = connectionId;
                 MarkActivity(room);
-                _logger.LogInformation($"Player {playerName} reconnected to room {roomId}");
+                _logger.LogInformation($"[GameService.AddPlayer] Player {playerName} reconnected to room {roomId}");
                 return existingPlayer;
             }
         }
 
         // New player trying to join
         if (room.State != GameState.Lobby && !allowRejoin)
+        {
+            _logger.LogWarning($"[GameService.AddPlayer] Cannot join: Game has already started");
             throw new InvalidOperationException("Cannot join: Game has already started");
+        }
 
         if (room.Players.Count >= room.MaxPlayers)
+        {
+            _logger.LogWarning($"[GameService.AddPlayer] Room is full");
             throw new InvalidOperationException("Room is full");
+        }
 
         // First player to join is the room creator
         if (room.CreatorConnectionId == null)
         {
             room.CreatorConnectionId = connectionId;
+            _logger.LogInformation($"[GameService.AddPlayer] Set {playerName} as room creator");
         }
 
         var player = new Player
@@ -121,7 +143,7 @@ public class GameService : IGameService
 
         room.Players.Add(player);
         MarkActivity(room);
-        _logger.LogInformation($"Player {playerName} joined room {roomId}");
+        _logger.LogInformation($"[GameService.AddPlayer] SUCCESS - Player {playerName} joined room {roomId}. Total players: {room.Players.Count}");
 
         return player;
     }

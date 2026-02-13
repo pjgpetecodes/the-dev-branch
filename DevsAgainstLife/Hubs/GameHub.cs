@@ -18,19 +18,51 @@ public class GameHub : Hub
         _logger = logger;
     }
 
-    public async Task CreateRoom(string roomId, int? totalRounds = null)
+    public async Task CreateRoom(string playerName)
     {
+        _logger.LogInformation($"[CreateRoom] *** METHOD ENTRY *** PlayerName: {playerName}");
         try
         {
+            _logger.LogInformation($"[CreateRoom] Start");
+            
+            playerName = playerName?.Trim() ?? string.Empty;
+            _logger.LogInformation($"[CreateRoom] After trim: '{playerName}'");
+            
+            if (string.IsNullOrWhiteSpace(playerName))
+            {
+                _logger.LogWarning("[CreateRoom] Player name is empty");
+                throw new InvalidOperationException("Player name is required");
+            }
+
+            // Generate a 5-character alphanumeric code
+            string roomId = GenerateRoomId();
+            _logger.LogInformation($"[CreateRoom] Generated room ID: {roomId}");
+            
             roomId = NormalizeRoomId(roomId);
-            _gameService.CreateRoom(roomId, totalRounds);
+            _logger.LogInformation($"[CreateRoom] Normalized room ID: {roomId}");
+            
+            var room = _gameService.CreateRoom(roomId);
+            _logger.LogInformation($"[CreateRoom] Room created in service");
+            
+            // Add the creator as the first player in the room
+            var player = _gameService.AddPlayer(roomId, Context.ConnectionId, playerName);
+            _logger.LogInformation($"[CreateRoom] Player added - Name: {player.Name}");
+            
             await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+            _logger.LogInformation($"[CreateRoom] Added to group {roomId}");
+            
             await Clients.Caller.SendAsync("RoomCreated", roomId);
-            _logger.LogInformation($"Room {roomId} created by {Context.ConnectionId}");
+            _logger.LogInformation($"[CreateRoom] Sent RoomCreated event");
+            
+            await Clients.Group(roomId).SendAsync("PlayerJoined", playerName, 1, new[] { playerName });
+            _logger.LogInformation($"[CreateRoom] Sent PlayerJoined event");
+            
+            _logger.LogInformation($"[CreateRoom] SUCCESS - Room {roomId} created by {playerName}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating room");
+            _logger.LogError(ex, $"[CreateRoom] *** EXCEPTION *** {ex.GetType().Name}: {ex.Message}");
+            _logger.LogError(ex, $"[CreateRoom] Stack trace: {ex.StackTrace}");
             await Clients.Caller.SendAsync("Error", ex.Message);
         }
     }
@@ -567,13 +599,28 @@ public class GameHub : Hub
     private static string NormalizeRoomId(string roomId)
     {
         if (string.IsNullOrWhiteSpace(roomId))
-            throw new InvalidOperationException("Room ID is required");
+            throw new InvalidOperationException("Room code is required");
 
-        var trimmed = roomId.Trim();
-        if (int.TryParse(trimmed, out var numeric) && numeric < 0)
-            throw new InvalidOperationException("Room ID cannot be a negative number");
+        var trimmed = roomId.Trim().ToUpper();
+        
+        // Validate: 5 characters, alphanumeric only
+        if (trimmed.Length != 5 || !System.Text.RegularExpressions.Regex.IsMatch(trimmed, "^[A-Z0-9]{5}$"))
+            throw new InvalidOperationException($"Room code must be exactly 5 alphanumeric characters. Got: '{trimmed}' (length: {trimmed.Length})");
 
         return trimmed;
+    }
+
+    private string GenerateRoomId()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var result = new char[5];
+        for (int i = 0; i < 5; i++)
+        {
+            result[i] = chars[_random.Next(chars.Length)];
+        }
+        var generatedId = new string(result);
+        _logger.LogInformation($"[GenerateRoomId] Generated: {generatedId}");
+        return generatedId;
     }
 
     public async Task NotifyRoomDeleted(string roomId)

@@ -30,8 +30,12 @@ async function initializeConnection() {
 
     // Set up event handlers
     connection.on("RoomCreated", (roomId) => {
-        console.log("Room created:", roomId);
+        console.log("[RoomCreated] Room created with ID:", roomId);
+        hasJoinedRoom = true;
+        currentRoomId = roomId;
+        document.getElementById('roomIdDisplay').textContent = roomId;
         showLobbyStatus(`Room ${roomId} created! Waiting for players...`);
+        updateShareLink();
     });
 
     connection.on("PlayerJoined", (playerName, playerCount, playerNames) => {
@@ -585,23 +589,23 @@ function clearNameError(target) {
 }
 
 function setRoomIdError(message) {
-    const errorText = message || 'Please enter a valid Room ID';
+    const errorText = message || 'Please enter a valid Room code';
     const roomIdError = document.getElementById('roomIdErrorMain');
-    const roomIdInput = document.getElementById('roomId');
-    if (roomIdError && roomIdInput) {
+    const roomCodeInput = document.getElementById('roomCode');
+    if (roomIdError && roomCodeInput) {
         roomIdError.textContent = errorText;
         roomIdError.classList.remove('hidden');
-        roomIdInput.classList.add('input-error');
+        roomCodeInput.classList.add('input-error');
     }
 }
 
 function clearRoomIdError() {
     const roomIdError = document.getElementById('roomIdErrorMain');
-    const roomIdInput = document.getElementById('roomId');
-    if (roomIdError && roomIdInput) {
+    const roomCodeInput = document.getElementById('roomCode');
+    if (roomIdError && roomCodeInput) {
         roomIdError.textContent = '';
         roomIdError.classList.add('hidden');
-        roomIdInput.classList.remove('input-error');
+        roomCodeInput.classList.remove('input-error');
     }
 }
 
@@ -637,29 +641,59 @@ function isNegativeRoomId(roomId) {
     return Number.isFinite(numeric) && numeric < 0;
 }
 
-function validateRoomId(roomId) {
-    if (!roomId) {
-        setRoomIdError("Please enter a room ID");
+function validateRoomId(roomCode) {
+    if (!roomCode) {
+        setRoomIdError("Please enter a room code");
         return false;
     }
 
-    if (!/^\d+$/.test(roomId)) {
-        setRoomIdError("Room ID must be a positive number");
-        return false;
-    }
-
-    const numeric = Number(roomId);
-    if (!Number.isFinite(numeric) || numeric <= 0) {
-        setRoomIdError("Room ID must be a positive number");
+    const code = roomCode.trim().toUpperCase();
+    if (!/^[A-Z0-9]{5}$/.test(code)) {
+        setRoomIdError("Room code must be exactly 5 alphanumeric characters");
         return false;
     }
 
     return true;
 }
 
-async function joinRoom() {
+async function createRoom() {
     const playerName = document.getElementById('playerName').value.trim();
-    const roomId = document.getElementById('roomId').value.trim();
+    console.log("[createRoom] START - playerName:", playerName);
+
+    clearNameError('main');
+    clearNameError('modal');
+    clearRoomIdError();
+
+    if (!playerName) {
+        console.log("[createRoom] ERROR - No player name");
+        setNameError('main', 'Please enter your name.');
+        return false;
+    }
+
+    try {
+        console.log("[createRoom] Invoking CreateRoom with playerName:", playerName);
+        // Call CreateRoom with player name - server auto-generates room code
+        await connection.invoke("CreateRoom", playerName);
+        console.log("[createRoom] CreateRoom invoke succeeded");
+        
+        currentPlayerName = playerName;
+        // The RoomCreated and PlayerJoined events will update the UI
+        hasJoinedRoom = true;
+        disableJoinControls();
+        return true;
+    } catch (err) {
+        console.error("[createRoom] ERROR - Invoke failed:", err);
+        const errorMessage = getJoinErrorMessage(err) || "Failed to create room";
+        console.error("[createRoom] Error message:", errorMessage);
+        showError(errorMessage);
+        return false;
+    }
+}
+
+async function joinRoom(roomCodeParam = null) {
+    const playerName = document.getElementById('playerName').value.trim();
+    // Use passed parameter (from share link) or read from input field (manual entry)
+    const roomCode = (roomCodeParam || document.getElementById('roomCode').value.trim()).toUpperCase();
 
     clearNameError('main');
     clearNameError('modal');
@@ -670,17 +704,16 @@ async function joinRoom() {
         return false;
     }
 
-    if (!validateRoomId(roomId)) {
+    if (!validateRoomId(roomCode)) {
         return false;
     }
 
-
     try {
-        await connection.invoke("JoinRoom", roomId, playerName);
-            // Only set these after successful join
-            currentRoomId = roomId;
-            currentPlayerName = playerName;
-            document.getElementById('roomIdDisplay').textContent = roomId;
+        await connection.invoke("JoinRoom", roomCode, playerName);
+        // Only set these after successful join
+        currentRoomId = roomCode;
+        currentPlayerName = playerName;
+        document.getElementById('roomIdDisplay').textContent = roomCode;
         // Mark as joined and disable controls
         hasJoinedRoom = true;
         disableJoinControls();
@@ -712,15 +745,15 @@ async function joinRoom() {
 
 function disableJoinControls() {
     document.getElementById('playerName').parentElement.classList.add('hidden');
-    document.getElementById('roomId').parentElement.classList.add('hidden');
-    document.getElementById('joinRoomBtn').classList.add('hidden');
+    document.getElementById('roomCode').parentElement.classList.add('hidden');
+    document.querySelector('.room-options').classList.add('hidden');
     document.getElementById('leaveRoomBtn').classList.remove('hidden');
 }
 
 function enableJoinControls() {
     document.getElementById('playerName').parentElement.classList.remove('hidden');
-    document.getElementById('roomId').parentElement.classList.remove('hidden');
-    document.getElementById('joinRoomBtn').classList.remove('hidden');
+    document.getElementById('roomCode').parentElement.classList.remove('hidden');
+    document.querySelector('.room-options').classList.remove('hidden');
     document.getElementById('leaveRoomBtn').classList.add('hidden');
 }
 
@@ -1439,9 +1472,9 @@ document.addEventListener('DOMContentLoaded', () => {
         modalNameInput.addEventListener('input', () => clearNameError('modal'));
     }
 
-    const roomIdInput = document.getElementById('roomId');
-    if (roomIdInput) {
-        roomIdInput.addEventListener('input', () => clearRoomIdError());
+    const roomCodeInput = document.getElementById('roomCode');
+    if (roomCodeInput) {
+        roomCodeInput.addEventListener('input', () => clearRoomIdError());
     }
 });
 
@@ -1459,22 +1492,22 @@ window.addEventListener('beforeunload', (e) => {
 
 function checkUrlForRoom() {
     const urlParams = new URLSearchParams(window.location.search);
-    const roomId = urlParams.get('room');
+    const roomCode = urlParams.get('room');
     
-    if (roomId) {
-        if (isNegativeRoomId(roomId)) {
+    if (roomCode) {
+        // Validate format is 5-char alphanumeric
+        if (!validateRoomId(roomCode)) {
             joinedViaLink = false;
-            document.getElementById('roomId').value = '';
-            showError("Room ID cannot be a negative number");
+            document.getElementById('roomCode').value = '';
             return;
         }
 
         joinedViaLink = true;
-        document.getElementById('roomId').value = roomId;
+        // Don't populate the input field - we'll use the room code directly from URL
+        // Hide player name input so user focuses on the modal instead
         document.getElementById('playerName').parentElement.classList.add('hidden');
-        document.getElementById('roomId').parentElement.classList.add('hidden');
-        document.getElementById('joinRoomBtn').classList.add('hidden');
-        showNameEntryModal(roomId);
+        document.querySelector('.room-options').classList.add('hidden');
+        showNameEntryModal(roomCode);
     }
 }
 
@@ -1509,7 +1542,7 @@ function confirmNameEntryFromModal() {
     confirmNameEntry(modalRoomId);
 }
 
-async function confirmNameEntry(roomId) {
+async function confirmNameEntry(roomCode) {
     const nameInput = document.getElementById('modalPlayerName');
     const playerName = nameInput.value.trim();
     
@@ -1523,10 +1556,10 @@ async function confirmNameEntry(roomId) {
     currentPlayerName = playerName;
     document.getElementById('playerName').value = playerName;
     
-    // If roomId was provided (joining via link), proceed to join
+    // If roomCode was provided (joining via link), proceed to join with that room code
     // Try to join - if it fails, modal stays open so they can retry with different name
-    if (roomId) {
-        const joinSucceeded = await joinRoom();
+    if (roomCode) {
+        const joinSucceeded = await joinRoom(roomCode);
         // Only close modal if join was successful
         if (joinSucceeded) {
             closeNameEntryModal();
@@ -1564,15 +1597,20 @@ function updateShareLink() {
     const shareLinkSection = document.getElementById('shareLinkSection');
     const shareLinkInput = document.getElementById('shareLinkInput');
     
-    // Show share link whenever we have a room ID and have joined, and either:
-    // - gameState exists and we're in lobby, OR
-    // - gameState doesn't exist yet but we just joined (it will arrive shortly)
-    if (hasJoinedRoom && currentRoomId && (!gameState || gameState.state === 0)) {
+    console.log("[updateShareLink] hasJoinedRoom:", hasJoinedRoom, "currentRoomId:", currentRoomId, "gameState:", gameState);
+    
+    // Show share link whenever we have a room ID and have joined
+    // - gameState doesn't exist yet, OR
+    // - gameState exists and we're in lobby (state === 0), OR
+    // - gameState exists and it's a non-lobby state (allow sharing anytime once in a room)
+    if (hasJoinedRoom && currentRoomId) {
         const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
         shareLinkInput.value = shareUrl;
         shareLinkSection.classList.remove('hidden');
+        console.log("[updateShareLink] SHOWING share link:", shareUrl);
     } else {
         shareLinkSection.classList.add('hidden');
+        console.log("[updateShareLink] HIDING share link");
     }
 }
 
