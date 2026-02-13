@@ -320,6 +320,8 @@ async function initializeConnection() {
         currentRoomId = '';
         currentPlayerName = '';
         roomCreatorId = '';
+        document.body.classList.remove('in-game');
+        document.body.classList.remove('czar-active');
         enableJoinControls();
         document.getElementById('lobby').style.display = 'block';
         document.getElementById('gameBoard').style.display = 'none';
@@ -350,6 +352,8 @@ async function initializeConnection() {
             hasPromptedRounds = false;
             
             // Reset UI
+            document.body.classList.remove('in-game');
+            document.body.classList.remove('czar-active');
             document.getElementById('gameBoard').style.display = 'none';
             document.getElementById('lobby').style.display = 'block';
             document.getElementById('lobbyStatus').innerHTML = '';
