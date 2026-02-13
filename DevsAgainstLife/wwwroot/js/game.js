@@ -382,6 +382,10 @@ async function initializeConnection() {
         showStatus(message || "Room activity extended.");
     });
 
+    connection.on("ReceiveTakedown", (senderName, takedownMessage) => {
+        showTakedownNotification(senderName, takedownMessage);
+    });
+
     // Start connection
     try {
         await connection.start();
@@ -1073,6 +1077,17 @@ function renderPlayers() {
         playerCard.appendChild(nameDiv);
         playerCard.appendChild(scoreDiv);
         
+        // Make the entire card clickable if it's not the current player
+        if (player.connectionId !== connection.connectionId) {
+            playerCard.classList.add('clickable');
+            playerCard.style.cursor = 'pointer';
+            playerCard.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                sendRandomTakedown(player.connectionId);
+            };
+        }
+        
         container.appendChild(playerCard);
 
         // Check if this is the current player
@@ -1583,3 +1598,29 @@ function updateWelcomeHeader() {
         welcomeHeader.classList.add('hidden');
     }
 }
+
+// Easter Egg: Takedown Functions
+function sendRandomTakedown(targetPlayerId) {
+    if (!currentRoomId || !gameState) return;
+    
+    // Server will select a random takedown
+    connection.invoke("SendTakedown", currentRoomId, targetPlayerId)
+        .catch(err => console.error("Error sending takedown:", err));
+}
+
+function showTakedownNotification(senderName, takedownMessage) {
+    const notifArea = document.getElementById('notificationArea');
+    
+    const notification = document.createElement('div');
+    notification.className = 'takedown-notification';
+    notification.innerHTML = `<strong>${senderName}</strong> roasted you: <em>"${takedownMessage}"</em>`;
+    
+    notifArea.appendChild(notification);
+    
+    // Remove after 8 seconds
+    setTimeout(() => {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 500);
+    }, 8000);
+}
+

@@ -360,6 +360,38 @@ button:disabled {
   padding: 10px;
   border-radius: 8px;
   text-align: center;
+  transition: all 0.3s ease;
+}
+
+.player-card.clickable {
+  cursor: pointer;
+}
+
+.player-card.clickable:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.2);
+}
+
+.player-name-button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.player-name-button:hover {
+  color: #ff4d4f;
+  text-decoration-style: solid;
+  text-decoration-color: #ff4d4f;
+  transform: scale(1.05);
 }
 
 .player-card.czar {
@@ -375,6 +407,55 @@ button:disabled {
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
+}
+
+/* Takedown Notification */
+.takedown-notification {
+  background: linear-gradient(135deg, #ff4d4f 0%, #ff7a7a 100%);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+  animation: slideIn 0.4s ease-out;
+  word-break: break-word;
+}
+
+.takedown-notification strong {
+  color: #fff;
+  font-weight: bold;
+}
+
+.takedown-notification em {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.takedown-notification.fade-out {
+  animation: slideOut 0.5s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
 }
 
 /* Black Card */

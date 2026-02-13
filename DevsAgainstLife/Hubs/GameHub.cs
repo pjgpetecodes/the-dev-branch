@@ -7,12 +7,14 @@ namespace DevsAgainstLife.Hubs;
 public class GameHub : Hub
 {
     private readonly IGameService _gameService;
+    private readonly ICardService _cardService;
     private readonly ILogger<GameHub> _logger;
     private readonly Random _random = new();
 
-    public GameHub(IGameService gameService, ILogger<GameHub> logger)
+    public GameHub(IGameService gameService, ICardService cardService, ILogger<GameHub> logger)
     {
         _gameService = gameService;
+        _cardService = cardService;
         _logger = logger;
     }
 
@@ -590,6 +592,36 @@ public class GameHub : Hub
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error extending room idle timer");
+            await Clients.Caller.SendAsync("Error", ex.Message);
+        }
+    }
+
+    public async Task SendTakedown(string roomId, string targetPlayerId)
+    {
+        try
+        {
+            roomId = NormalizeRoomId(roomId);
+            var room = _gameService.GetRoom(roomId);
+            if (room == null)
+                throw new InvalidOperationException("Room not found");
+
+            var targetPlayer = room.Players.FirstOrDefault(p => p.ConnectionId == targetPlayerId);
+            if (targetPlayer == null)
+                throw new InvalidOperationException("Target player not found");
+
+            var senderPlayer = room.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
+            if (senderPlayer == null)
+                throw new InvalidOperationException("Sender not found");
+
+            // Get a random takedown from the card service
+            var takedownMessage = _cardService.GetRandomTakedown();
+
+            // Send the takedown only to the target player
+            await Clients.Client(targetPlayerId).SendAsync("ReceiveTakedown", senderPlayer.Name, takedownMessage);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending takedown");
             await Clients.Caller.SendAsync("Error", ex.Message);
         }
     }

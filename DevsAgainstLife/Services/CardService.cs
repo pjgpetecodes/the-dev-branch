@@ -6,6 +6,7 @@ public interface ICardService
 {
     List<BlackCard> GetBlackCards();
     List<WhiteCard> GetWhiteCards();
+    string GetRandomTakedown();
     BlackCard GetRandomBlackCard();
     WhiteCard GetRandomWhiteCard();
     void SetBlackCards(List<BlackCard> cards);
@@ -16,6 +17,7 @@ public class CardService : ICardService
 {
     private readonly List<BlackCard> _blackCards = new();
     private readonly List<WhiteCard> _whiteCards = new();
+    private readonly List<string> _takedowns = new();
     private readonly Random _random = new();
     private readonly ILogger<CardService> _logger;
 
@@ -76,6 +78,25 @@ public class CardService : ICardService
             {
                 _logger.LogWarning($"White cards file not found at {whiteCardsPath}");
             }
+
+            // Load takedowns
+            var takedownsPath = Path.Combine(contentRootPath, "Data", "takedowns.txt");
+            if (File.Exists(takedownsPath))
+            {
+                var lines = File.ReadAllLines(takedownsPath);
+                foreach (var line in lines)
+                {
+                    if (!string.IsNullOrWhiteSpace(line))
+                    {
+                        _takedowns.Add(line.Trim());
+                    }
+                }
+                _logger.LogInformation($"Loaded {_takedowns.Count} takedowns");
+            }
+            else
+            {
+                _logger.LogWarning($"Takedowns file not found at {takedownsPath}");
+            }
         }
         catch (Exception ex)
         {
@@ -101,6 +122,14 @@ public class CardService : ICardService
             throw new InvalidOperationException("No white cards available");
         
         return _whiteCards[_random.Next(_whiteCards.Count)];
+    }
+
+    public string GetRandomTakedown()
+    {
+        if (_takedowns.Count == 0)
+            return "Your code is... let's just say it's unique.";
+        
+        return _takedowns[_random.Next(_takedowns.Count)];
     }
 
     public void SetBlackCards(List<BlackCard> cards)
