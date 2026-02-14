@@ -214,7 +214,7 @@ public class GameHub : Hub
         }
     }
 
-    public async Task SubmitCards(string roomId, List<string> cardIds, string? onBehalfOfConnectionId = null)
+    public async Task SubmitCards(string roomId, List<string> cardIds, string onBehalfOfConnectionId)
     {
         try
         {
@@ -242,8 +242,9 @@ public class GameHub : Hub
         }
     }
 
-    public async Task SelectWinner(string roomId, string winnerId, string? onBehalfOfConnectionId = null)
+    public async Task SelectWinner(string roomId, string winnerId, string onBehalfOfConnectionId)
     {
+        _logger.LogInformation($"[SelectWinner] Entry - roomId: {roomId}, winnerId: {winnerId}");
         try
         {
             roomId = NormalizeRoomId(roomId);
@@ -255,8 +256,31 @@ public class GameHub : Hub
                 effectiveConnectionId = onBehalfOfConnectionId;
             }
             
-            _gameService.SelectWinner(roomId, winnerId);
             var room = _gameService.GetRoom(roomId);
+            if (room == null)
+            {
+                _logger.LogWarning($"[SelectWinner] Room not found: {roomId}");
+                await Clients.Caller.SendAsync("Error", "Room not found");
+                return;
+            }
+
+            if (room.State != GameState.Judging)
+            {
+                _logger.LogWarning($"[SelectWinner] Not in judging state - current state: {room.State}");
+                await Clients.Caller.SendAsync("Error", $"Not in judging state. Current state: {room.State}");
+                return;
+            }
+
+            var playerExists = room.Players.Any(p => p.ConnectionId == winnerId);
+            if (!playerExists)
+            {
+                _logger.LogWarning($"[SelectWinner] Winner not found - winnerId: {winnerId}");
+                await Clients.Caller.SendAsync("Error", "Winner not found");
+                return;
+            }
+
+            _gameService.SelectWinner(roomId, winnerId);
+            room = _gameService.GetRoom(roomId);
             
             await Clients.Group(roomId).SendAsync("WinnerSelected", winnerId);
             await Clients.Group(roomId).SendAsync("GameStateUpdated", room);
@@ -265,9 +289,23 @@ public class GameHub : Hub
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error selecting winner");
-            await Clients.Caller.SendAsync("Error", ex.Message);
+            _logger.LogError(ex, $"Error selecting winner: {ex.Message}");
+            try
+            {
+                await Clients.Caller.SendAsync("Error", $"Server error: {ex.Message}");
+            }
+            catch (Exception sendEx)
+            {
+                _logger.LogError(sendEx, "Failed to send error message to client");
+            }
         }
+    }
+
+    public async Task TestDiagnostic(string msg)
+    {
+        Console.WriteLine($"[TestDiagnostic-CONSOLE] Received: {msg}");
+        _logger.LogInformation($"[TestDiagnostic] Received: {msg}");
+        await Clients.Caller.SendAsync("DiagnosticResponse", "Server received your diagnostic test");
     }
 
     public async Task NextRound(string roomId)

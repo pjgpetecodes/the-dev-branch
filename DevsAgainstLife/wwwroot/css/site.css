@@ -552,6 +552,13 @@ button:disabled {
 .black-card-answer {
   color: #ff4d4f;
   font-weight: 800;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.black-card-blank {
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: normal;
 }
 
 .black-card-text {
@@ -568,6 +575,12 @@ button:disabled {
 .white-card.selected {
   border: 5px solid #28a745;
   box-shadow: 0 0 20px rgba(40, 167, 69, 0.6);
+  transform: translateY(-10px);
+}
+
+.mini-card.selected {
+  z-index: 50 !important;
+  margin-left: 0 !important;
 }
 
 .white-card.submitted {
@@ -589,14 +602,42 @@ button:disabled {
 .cards-container {
   display: flex;
   padding: 10px;
+  padding-right: 50px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 12px;
-  overflow: visible;
+  overflow-x: visible;
+  overflow-y: visible;
   align-items: flex-start;
   position: relative;
   min-height: 240px;
   max-width: 100%;
   flex-wrap: nowrap;
+}
+
+/* Enable scrolling only on smaller screens */
+@media (max-width: 1350px) {
+  .cards-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .cards-container::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .cards-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+
+  .cards-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+  }
+
+  .cards-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
 }
 
 .mini-card {
@@ -621,10 +662,21 @@ button:disabled {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+/* Selected cards stay on top but below hover */
+.mini-card.selected:not(:hover) {
+  z-index: 50;
+}
+
 /* Shift remaining cards slightly right when any card is hovered */
 .mini-card:hover ~ .mini-card,
 .mini-card.expanded ~ .mini-card {
   margin-left: -30px;
+}
+
+/* Keep selected cards visible when other cards are hovered */
+.mini-card:hover ~ .mini-card.selected,
+.mini-card.expanded ~ .mini-card.selected {
+  margin-left: 0;
 }
 
 /* Mobile: Horizontal scroll container */

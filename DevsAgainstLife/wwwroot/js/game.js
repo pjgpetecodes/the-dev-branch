@@ -988,21 +988,25 @@ async function submitCard(cardId) {
     const pickCount = gameState?.currentBlackCard?.pickCount || 1;
 
     if (currentPlayer.selectedCards.includes(cardId)) {
+        // Deselect the card
         currentPlayer.selectedCards = currentPlayer.selectedCards.filter(id => id !== cardId);
     } else {
         if (currentPlayer.selectedCards.length >= pickCount) {
-            showError(`You can only select ${pickCount} card${pickCount !== 1 ? 's' : ''}`);
-            return;
+            // For single card selection, replace the current card
+            if (pickCount === 1) {
+                currentPlayer.selectedCards = [cardId];
+            } else {
+                showError(`You can only select ${pickCount} card${pickCount !== 1 ? 's' : ''}`);
+                return;
+            }
+        } else {
+            currentPlayer.selectedCards.push(cardId);
         }
-        currentPlayer.selectedCards.push(cardId);
     }
 
     renderHand();
+    updateBlackCardWithSelection();
     updateSubmitButtonState();
-
-    if (pickCount === 1 && currentPlayer.selectedCards.length === 1) {
-        await submitSelectedCards();
-    }
 }
 
 async function submitSelectedCards() {
@@ -1029,12 +1033,9 @@ async function submitSelectedCards() {
     }
 
     try {
-        // In demo mode, submit on behalf of the controlled player
-        if (isDemoMode && currentConnectionId !== connection.connectionId) {
-            await connection.invoke("SubmitCards", currentRoomId, currentPlayer.selectedCards, currentConnectionId);
-        } else {
-            await connection.invoke("SubmitCards", currentRoomId, currentPlayer.selectedCards);
-        }
+        // Always pass currentConnectionId as the third parameter
+        // This works for both demo mode and normal mode
+        await connection.invoke("SubmitCards", currentRoomId, currentPlayer.selectedCards, currentConnectionId);
         currentPlayer.hasSubmitted = true;
         renderHand();
         updateSubmitButtonState();
@@ -1052,12 +1053,10 @@ async function selectWinner(playerId) {
     }
 
     try {
-        // In demo mode, select winner on behalf of the controlled player
-        if (isDemoMode && currentConnectionId !== connection.connectionId) {
-            await connection.invoke("SelectWinner", currentRoomId, playerId, currentConnectionId);
-        } else {
-            await connection.invoke("SelectWinner", currentRoomId, playerId);
-        }
+        // Always pass currentConnectionId as the third parameter
+        // This works for both demo mode (when currentConnectionId differs from connection.connectionId)
+        // and normal mode (when they're the same, it just gets ignored on the server)
+        await connection.invoke("SelectWinner", currentRoomId, playerId, currentConnectionId);
     } catch (err) {
         console.error("Error selecting winner:", err);
         showError(err.message || "Failed to select winner");
@@ -1079,10 +1078,8 @@ function updateGameDisplay() {
     // Update players
     renderPlayers();
 
-    // Update black card
-    if (gameState.currentBlackCard) {
-        document.getElementById('blackCard').textContent = gameState.currentBlackCard.text;
-    }
+    // Update black card with any current selections
+    updateBlackCardWithSelection();
 
     // Update game state specific UI
     updateGameStateUI();
@@ -1343,17 +1340,71 @@ function updateSubmitButtonState() {
         return;
     }
 
-    if (pickCount <= 1) {
-        button.classList.add('hidden');
-        return;
-    }
-
+    // Always show submit button for players during Playing state
     button.classList.remove('hidden');
     button.disabled = currentPlayer.hasSubmitted || currentPlayer.selectedCards.length !== pickCount;
 }
 
 function hideSubmittedCards() {
     document.getElementById('submittedCardsSection').classList.add('hidden');
+}
+
+function updateBlackCardWithSelection() {
+    const blackCardEl = document.getElementById('blackCard');
+    if (!blackCardEl || !gameState?.currentBlackCard) return;
+
+    const text = gameState.currentBlackCard.text || '';
+    const parts = text.split(/_{2,}/);
+    const escapeHtml = (value) => value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    // Get selected cards text
+    const selectedAnswers = [];
+    if (!currentPlayer.hasSubmitted && currentPlayer.selectedCards.length > 0) {
+        currentPlayer.selectedCards.forEach(cardId => {
+            const card = currentPlayer.hand?.find(c => c.id === cardId);
+            if (card) selectedAnswers.push(card.text);
+        });
+    }
+
+    let html = '';
+
+    if (parts.length > 1) {
+        // Multi-blank card
+        parts.forEach((part, index) => {
+            let normalizedPart = part;
+            if (index > 0) {
+                const trimmedLeading = part.replace(/^\s+/, '');
+                if (/^[.,!?]/.test(trimmedLeading)) {
+                    normalizedPart = trimmedLeading;
+                } else {
+                    normalizedPart = part.replace(/^\s+/, ' ');
+                }
+            }
+            html += escapeHtml(normalizedPart);
+            
+            // Add selected answer or blank
+            if (index < parts.length - 1) {
+                if (index < selectedAnswers.length) {
+                    html += `<span class="black-card-answer">${escapeHtml(selectedAnswers[index])}</span>`;
+                } else {
+                    html += '<span class="black-card-blank">____</span>';
+                }
+            }
+        });
+    } else {
+        // Single blank card
+        if (selectedAnswers.length > 0) {
+            html += escapeHtml(text);
+            html += ` <span class="black-card-answer">${escapeHtml(selectedAnswers[0])}</span>`;
+        } else {
+            html += escapeHtml(text);
+        }
+    }
+
+    blackCardEl.innerHTML = html;
 }
 
 function renderWinningBlackCard(winnerId) {
@@ -1960,6 +2011,24 @@ async function switchToPlayer(testPlayerName) {
     showStatus(`Now controlling: ${testPlayerName} ${targetPlayer.isCardCzar ? '(Card Czar)' : ''}`);
 }
 
+let isDemoPanelMinimized = localStorage.getItem('demoPanelMinimized') === 'true';
+
+function applyDemoPanelMinimized(panel, playersContainer, headerLabel) {
+    if (!panel || !playersContainer || !headerLabel) return;
+
+    playersContainer.style.display = isDemoPanelMinimized ? 'none' : 'flex';
+    panel.style.padding = '0';
+    headerLabel.textContent = isDemoPanelMinimized
+        ? '🎮 Demo Player Switcher (minimized)'
+        : '🎮 Demo Player Switcher';
+}
+
+function toggleDemoPanel(panel, playersContainer, headerLabel) {
+    isDemoPanelMinimized = !isDemoPanelMinimized;
+    localStorage.setItem('demoPanelMinimized', isDemoPanelMinimized ? 'true' : 'false');
+    applyDemoPanelMinimized(panel, playersContainer, headerLabel);
+}
+
 function showDemoPlayerSwitcherPanel() {
     // Only show in demo mode
     if (!isDemoMode) return;
@@ -1978,24 +2047,32 @@ function showDemoPlayerSwitcherPanel() {
         background: rgba(45, 95, 163, 0.95);
         border: 2px solid #0064c8;
         border-radius: 8px;
-        padding: 15px;
         z-index: 1000;
         max-width: 250px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     `;
     
-    // Title
-    const title = document.createElement('div');
-    title.style.cssText = `
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = `
+        background: rgba(30, 58, 95, 0.95);
         color: #fff;
         font-weight: bold;
         font-size: 0.9em;
-        margin-bottom: 8px;
-        text-decoration: underline;
+        padding: 8px 10px;
+        border-bottom: 1px solid #0064c8;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        cursor: pointer;
+        user-select: none;
     `;
-    title.textContent = '🎮 Demo Mode - Click to Switch:';
-    panel.appendChild(title);
+
+    const headerLabel = document.createElement('div');
+    headerLabel.textContent = '🎮 Demo Player Switcher';
+    header.appendChild(headerLabel);
+    header.onclick = () => toggleDemoPanel(panel, playersContainer, headerLabel);
+    panel.appendChild(header);
     
     // Players container
     const playersContainer = document.createElement('div');
@@ -2010,7 +2087,8 @@ function showDemoPlayerSwitcherPanel() {
     // Add to page
     document.body.appendChild(panel);
     
-    // Update the player list
+    // Apply minimized state and update the player list
+    applyDemoPanelMinimized(panel, playersContainer, headerLabel);
     updateDemoPlayerSwitcherPanel();
 }
 
