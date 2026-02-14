@@ -3,6 +3,7 @@ let connection;
 let currentRoomId = '';
 let currentConnectionId = '';
 let roomCreatorId = '';
+let isDemoMode = false;
 let currentPlayer = {
     hand: [],
     isCardCzar: false,
@@ -36,6 +37,17 @@ async function initializeConnection() {
         document.getElementById('roomIdDisplay').textContent = roomId;
         showLobbyStatus(`Room ${roomId} created! Waiting for players...`);
         updateShareLink();
+    });
+
+    connection.on("DemoModeEnabled", () => {
+        console.log("[DemoModeEnabled] Demo mode activated");
+        isDemoMode = true;
+        // In demo mode, current player is the room creator
+        roomCreatorId = connection.connectionId;
+        showDemoControls();
+        // Show rounds selector modal immediately (don't wait for gameState)
+        openRoundsModal();
+        hasPromptedRounds = false; // Ensure we can prompt
     });
 
     connection.on("PlayerJoined", (playerName, playerCount, playerNames) => {
@@ -112,6 +124,8 @@ async function initializeConnection() {
         updateGameDisplay();
         renderHand(); // Render hand after restoring data (needed when rejoining mid-game)
         updateShareLink(); // Call after updateGameDisplay to ensure state is ready
+        updateTestPlayersList(); // Update demo controls if in demo mode
+        updateDemoPlayerSwitcherPanel(); // Update floating panel if in demo mode during gameplay
     });
 
     connection.on("GameStarted", () => {
@@ -125,6 +139,11 @@ async function initializeConnection() {
         if (header) header.style.display = 'none';
         const logo = document.getElementById('gameLogo');
         if (logo) logo.classList.remove('hidden');
+        
+        // Show demo player switcher panel if in demo mode
+        if (isDemoMode) {
+            showDemoPlayerSwitcherPanel();
+        }
         
         updateWelcomeHeader();
         showStatus("Game started! Get ready to play!");
@@ -709,17 +728,14 @@ async function joinRoom(roomCodeParam = null) {
     }
 
     try {
-        await connection.invoke("JoinRoom", roomCode, playerName);
-        // Only set these after successful join
-        currentRoomId = roomCode;
         currentPlayerName = playerName;
-        document.getElementById('roomIdDisplay').textContent = roomCode;
-        // Mark as joined and disable controls
-        hasJoinedRoom = true;
+        await connection.invoke("JoinRoom", roomCode, playerName);
+        // Don't set currentRoomId here - wait for server to send RoomCreated event
+        // This allows DEMO mode and other special room codes to work correctly
+        // as the server may create a different room than what was requested
         disableJoinControls();
         updateWelcomeHeader();
-        updateShareLink(); // Show share link even if GameStateUpdated hasn't fired yet
-        // The PlayerJoined event will handle updating the lobby status and button
+        // The RoomCreated event will set currentRoomId and show the share link
         return true;
     } catch (err) {
         console.error("Error joining room:", err);
@@ -1013,7 +1029,12 @@ async function submitSelectedCards() {
     }
 
     try {
-        await connection.invoke("SubmitCards", currentRoomId, currentPlayer.selectedCards);
+        // In demo mode, submit on behalf of the controlled player
+        if (isDemoMode && currentConnectionId !== connection.connectionId) {
+            await connection.invoke("SubmitCards", currentRoomId, currentPlayer.selectedCards, currentConnectionId);
+        } else {
+            await connection.invoke("SubmitCards", currentRoomId, currentPlayer.selectedCards);
+        }
         currentPlayer.hasSubmitted = true;
         renderHand();
         updateSubmitButtonState();
@@ -1031,7 +1052,12 @@ async function selectWinner(playerId) {
     }
 
     try {
-        await connection.invoke("SelectWinner", currentRoomId, playerId);
+        // In demo mode, select winner on behalf of the controlled player
+        if (isDemoMode && currentConnectionId !== connection.connectionId) {
+            await connection.invoke("SelectWinner", currentRoomId, playerId, currentConnectionId);
+        } else {
+            await connection.invoke("SelectWinner", currentRoomId, playerId);
+        }
     } catch (err) {
         console.error("Error selecting winner:", err);
         showError(err.message || "Failed to select winner");
@@ -1123,8 +1149,8 @@ function renderPlayers() {
         
         container.appendChild(playerCard);
 
-        // Check if this is the current player
-        if (player.connectionId === connection.connectionId) {
+        // Check if this is the current player (use currentConnectionId to support demo mode player switching)
+        if (player.connectionId === currentConnectionId) {
             currentPlayer.isCardCzar = player.isCardCzar;
         }
     });
@@ -1663,4 +1689,366 @@ function showTakedownNotification(senderName, takedownMessage) {
         setTimeout(() => notification.remove(), 500);
     }, 8000);
 }
+
+// Demo Mode Controls
+const testPlayerNamePool = [
+    // Diverse mix of names from various cultures and backgrounds
+    "Aisha", "Carlos", "Dmitri", "Elena", "Fatima", "Giovanni", "Hassan",
+    "Ingrid", "Jamal", "Keiko", "Liam", "Mei", "Nadia", "Oscar", "Priya",
+    "Quinn", "Raj", "Sofia", "Tariq", "Uma", "Viktor", "Wei", "Xena",
+    "Yuki", "Zara", "Amir", "Briana", "Chen", "Diego", "Emeka", "Freya",
+    "Gabriel", "Hana", "Ivan", "Jin", "Keira", "Lars", "Maya", "Nia",
+    "Omar", "Petra", "Rashid", "Sasha", "Tenzin", "Ula", "Vera", "Wang",
+    "Yara", "Zeke", "Amara", "Bruno", "Camila", "Dev", "Esther", "Felix"
+];
+
+const MAX_ROOM_PLAYERS = 10;
+const MAX_BUTTON_SLOTS = 6;
+
+let availableTestPlayerNames = [];
+let usedTestPlayerNames = new Set();
+
+function getRandomUnusedName() {
+    const unused = testPlayerNamePool.filter(name => !usedTestPlayerNames.has(name));
+    if (unused.length === 0) return null;
+    return unused[Math.floor(Math.random() * unused.length)];
+}
+
+function getAvailableSlots() {
+    const currentPlayerCount = gameState ? gameState.players.length : 1;
+    const remainingSlots = MAX_ROOM_PLAYERS - currentPlayerCount;
+    return Math.min(MAX_BUTTON_SLOTS, remainingSlots);
+}
+
+function initializeTestPlayerNames(count) {
+    availableTestPlayerNames = [];
+    for (let i = 0; i < count; i++) {
+        const name = getRandomUnusedName();
+        if (name) {
+            availableTestPlayerNames.push(name);
+            usedTestPlayerNames.add(name);
+        }
+    }
+}
+
+function createTestPlayerButton(name, container) {
+    const btn = document.createElement('button');
+    btn.dataset.playerName = name;
+    btn.style.cssText = `
+        padding: 10px 16px; 
+        font-size: 0.9em;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.2s;
+    `;
+    btn.textContent = `+ ${name}`;
+    btn.onmouseover = () => btn.style.backgroundColor = '#218838';
+    btn.onmouseout = () => btn.style.backgroundColor = '#28a745';
+    btn.onclick = () => addTestPlayerAndRefresh(name, btn);
+    container.appendChild(btn);
+}
+
+function showDemoControls() {
+    // Initialize the names pool with the correct number of slots
+    const slotsAvailable = getAvailableSlots();
+    initializeTestPlayerNames(slotsAvailable);
+    
+    // Create demo controls section
+    const demoSection = document.createElement('div');
+    demoSection.id = 'demoControls';
+    demoSection.style.cssText = `
+        margin-top: 20px;
+        padding: 15px;
+        background-color: rgba(30, 60, 120, 0.4);
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+    `;
+    
+    demoSection.innerHTML = `
+        <h3 style="margin-top: 0; color: #fff;">🧪 Demo Test Players</h3>
+        <p style="margin-bottom: 15px; font-size: 0.9em; color: #fff;">Add or remove test players to simulate multiple players (Max 10 total):</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 15px;" id="testPlayerButtons"></div>
+        <div id="testPlayersList" style="margin-top: 10px; font-size: 0.85em;"></div>
+    `;
+    
+    // Find lobby element and append demo section
+    const lobby = document.getElementById('lobby');
+    if (lobby) {
+        const startGameBtn = document.getElementById('startGameBtn');
+        if (startGameBtn) {
+            startGameBtn.parentElement.insertBefore(demoSection, startGameBtn);
+        } else {
+            lobby.appendChild(demoSection);
+        }
+    }
+    
+    // Create buttons for test players
+    const buttonContainer = document.getElementById('testPlayerButtons');
+    availableTestPlayerNames.forEach(name => {
+        createTestPlayerButton(name, buttonContainer);
+    });
+    
+    updateTestPlayersList();
+}
+
+async function addTestPlayerAndRefresh(playerName, button) {
+    // Add the player
+    await addTestPlayer(playerName);
+    
+    // Remove the button
+    const buttonContainer = document.getElementById('testPlayerButtons');
+    if (button && buttonContainer) {
+        button.remove();
+        
+        // Remove from available names
+        const index = availableTestPlayerNames.indexOf(playerName);
+        if (index > -1) {
+            availableTestPlayerNames.splice(index, 1);
+        }
+        
+        // Check if we should add a new button based on room capacity
+        const slotsAvailable = getAvailableSlots();
+        const currentButtonCount = buttonContainer.children.length;
+        
+        // Only add a new button if we're still under the capacity
+        if (currentButtonCount < slotsAvailable) {
+            const newName = getRandomUnusedName();
+            if (newName) {
+                usedTestPlayerNames.add(newName);
+                availableTestPlayerNames.push(newName);
+                createTestPlayerButton(newName, buttonContainer);
+            }
+        }
+    }
+}
+
+async function addTestPlayer(playerName) {
+    // Only allow in demo mode
+    if (!isDemoMode) {
+        showError("Test players can only be added in demo mode");
+        return;
+    }
+    
+    if (!currentRoomId) {
+        showError("No room joined");
+        return;
+    }
+    
+    try {
+        console.log(`[Demo] Adding test player: ${playerName}`);
+        await connection.invoke("AddTestPlayer", currentRoomId, playerName);
+        updateTestPlayersList();
+    } catch (err) {
+        console.error(`Error adding test player:`, err);
+        showError(`Failed to add ${playerName}`);
+    }
+}
+
+async function removeTestPlayer(playerName) {
+    // Only allow in demo mode
+    if (!isDemoMode) {
+        showError("Test players can only be removed in demo mode");
+        return;
+    }
+    
+    if (!currentRoomId) {
+        showError("No room joined");
+        return;
+    }
+    
+    try {
+        console.log(`[Demo] Removing test player: ${playerName}`);
+        await connection.invoke("RemoveTestPlayer", currentRoomId, playerName);
+        
+        // Make this name available again in the pool
+        usedTestPlayerNames.delete(playerName);
+        
+        // When a player is removed, we might be able to add a button back
+        const buttonContainer = document.getElementById('testPlayerButtons');
+        if (buttonContainer) {
+            const slotsAvailable = getAvailableSlots();
+            const currentButtonCount = buttonContainer.children.length;
+            
+            // If we have room for more buttons, add one
+            if (currentButtonCount < slotsAvailable && currentButtonCount < MAX_BUTTON_SLOTS) {
+                const newName = getRandomUnusedName();
+                if (newName) {
+                    usedTestPlayerNames.add(newName);
+                    availableTestPlayerNames.push(newName);
+                    createTestPlayerButton(newName, buttonContainer);
+                }
+            }
+        }
+        
+        updateTestPlayersList();
+    } catch (err) {
+        console.error(`Error removing test player:`, err);
+        showError(`Failed to remove ${playerName}`);
+    }
+}
+
+function updateTestPlayersList() {
+    // Only update test players list in demo mode
+    if (!isDemoMode) return;
+    
+    const listContainer = document.getElementById('testPlayersList');
+    if (!listContainer || !gameState) return;
+    
+    const testPlayers = gameState.players.filter(p => p.connectionId.startsWith('test-'));
+    
+    if (testPlayers.length === 0) {
+        listContainer.innerHTML = '<em style="color: rgba(255, 255, 255, 0.6);">No test players yet</em>';
+        return;
+    }
+    
+    listContainer.innerHTML = '<strong style="color: #fff; display: block; margin-bottom: 8px;">Active test players (click to control):</strong>' + 
+        '<div style="display: flex; flex-wrap: wrap; gap: 8px;">' +
+        testPlayers.map(p => `<span style="background: #fff; color: #333; padding: 6px 10px; border-radius: 4px; display: inline-flex; align-items: center; cursor: pointer; font-weight: bold; font-size: 0.9em;" onclick="switchToPlayer('${p.name}')" title="Click to control ${p.name}${p.isCardCzar ? ' (Card Czar)' : ''}">${p.name}${p.isCardCzar ? ' ♠' : ''} <button style="background: #dc3545; border: none; color: #fff; cursor: pointer; padding: 2px 6px; margin-left: 6px; border-radius: 3px; font-size: 1em; line-height: 1;" onclick="event.stopPropagation(); removeTestPlayer('${p.name}')">×</button></span>`).join('') +
+        '</div>';
+}
+
+async function switchToPlayer(testPlayerName) {
+    console.log(`[switchToPlayer] Called with: ${testPlayerName}, isDemoMode: ${isDemoMode}`);
+    
+    // Only allow switching in demo mode
+    if (!isDemoMode) {
+        console.warn(`[switchToPlayer] Attempted to switch outside demo mode`);
+        showError("Player switching is only available in demo mode");
+        return;
+    }
+    
+    if (!gameState) {
+        console.warn(`[switchToPlayer] gameState is not set`);
+        return;
+    }
+    
+    // Find the player (can be test player or real player in demo mode)
+    const targetPlayer = gameState.players.find(p => p.name === testPlayerName);
+    console.log(`[switchToPlayer] Found player: ${targetPlayer ? targetPlayer.name : 'NOT FOUND'}, isCardCzar: ${targetPlayer ? targetPlayer.isCardCzar : 'N/A'}`);
+    
+    if (!targetPlayer) {
+        console.error(`Player ${testPlayerName} not found in gameState`);
+        showError(`Could not find player: ${testPlayerName}`);
+        return;
+    }
+    
+    // Check if this player has submitted cards
+    const hasSubmittedCards = gameState.submittedCards && gameState.submittedCards[targetPlayer.connectionId];
+    const submittedCards = hasSubmittedCards ? gameState.submittedCards[targetPlayer.connectionId] : [];
+    
+    // Switch current player context to this player
+    currentPlayer = {
+        hand: targetPlayer.hand || [],
+        isCardCzar: targetPlayer.isCardCzar || false,
+        selectedCards: submittedCards,
+        hasSubmitted: !!hasSubmittedCards
+    };
+    currentPlayerName = testPlayerName;
+    currentConnectionId = targetPlayer.connectionId; // Update connection ID to match the player we're controlling
+    
+    console.log(`[switchToPlayer] Successfully switched to: ${testPlayerName}, isCardCzar: ${targetPlayer.isCardCzar}, hasSubmitted: ${currentPlayer.hasSubmitted}`);
+    updateWelcomeHeader();
+    updateGameDisplay(); // Re-render the entire game board for this player's perspective
+    renderHand();
+    updateDemoPlayerSwitcherPanel(); // Update the panel to highlight current player
+    
+    // Show a notification
+    showStatus(`Now controlling: ${testPlayerName} ${targetPlayer.isCardCzar ? '(Card Czar)' : ''}`);
+}
+
+function showDemoPlayerSwitcherPanel() {
+    // Only show in demo mode
+    if (!isDemoMode) return;
+    
+    // Remove existing panel if any
+    const existing = document.getElementById('demoPlayerSwitcherPanel');
+    if (existing) existing.remove();
+    
+    // Create floating panel
+    const panel = document.createElement('div');
+    panel.id = 'demoPlayerSwitcherPanel';
+    panel.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(45, 95, 163, 0.95);
+        border: 2px solid #0064c8;
+        border-radius: 8px;
+        padding: 15px;
+        z-index: 1000;
+        max-width: 250px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    `;
+    
+    // Title
+    const title = document.createElement('div');
+    title.style.cssText = `
+        color: #fff;
+        font-weight: bold;
+        font-size: 0.9em;
+        margin-bottom: 8px;
+        text-decoration: underline;
+    `;
+    title.textContent = '🎮 Demo Mode - Click to Switch:';
+    panel.appendChild(title);
+    
+    // Players container
+    const playersContainer = document.createElement('div');
+    playersContainer.id = 'demoPanelPlayers';
+    playersContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    `;
+    panel.appendChild(playersContainer);
+    
+    // Add to page
+    document.body.appendChild(panel);
+    
+    // Update the player list
+    updateDemoPlayerSwitcherPanel();
+}
+
+function updateDemoPlayerSwitcherPanel() {
+    const container = document.getElementById('demoPanelPlayers');
+    if (!container || !gameState || !isDemoMode) return;
+    
+    container.innerHTML = '';
+    
+    gameState.players.forEach(player => {
+        const playerBtn = document.createElement('button');
+        playerBtn.style.cssText = `
+            background: ${currentPlayerName === player.name ? '#4db8ff' : '#1e3a5f'};
+            color: #fff;
+            border: 1px solid #0064c8;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: ${currentPlayerName === player.name ? 'bold' : 'normal'};
+            transition: all 0.2s;
+        `;
+        
+        playerBtn.onmouseover = () => {
+            if (currentPlayerName !== player.name) {
+                playerBtn.style.background = '#2d5fa3';
+            }
+        };
+        playerBtn.onmouseout = () => {
+            playerBtn.style.background = currentPlayerName === player.name ? '#4db8ff' : '#1e3a5f';
+        };
+        
+        playerBtn.textContent = `${player.name}${player.isCardCzar ? ' ♠' : ''}`;
+        playerBtn.onclick = () => switchToPlayer(player.name);
+        
+        container.appendChild(playerBtn);
+    });
+}
+
+
 

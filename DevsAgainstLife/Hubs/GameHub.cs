@@ -101,6 +101,33 @@ public class GameHub : Hub
     {
         try
         {
+            // Special demo mode - create a room for manual test player management
+            if (roomId?.ToUpper() == "D3M0X")
+            {
+                _logger.LogInformation($"[JoinRoom] DEMO mode detected for player {playerName}");
+                
+                playerName = playerName?.Trim() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(playerName))
+                    throw new InvalidOperationException("Player name is required");
+
+                // Create a unique room code for this demo session
+                string demoRoomId = GenerateRoomId();
+                demoRoomId = NormalizeRoomId(demoRoomId);
+                
+                var demoRoom = _gameService.CreateRoom(demoRoomId);
+                demoRoom.CreatorConnectionId = Context.ConnectionId; // Set the joining player as room creator
+                
+                // Add the main player
+                var mainPlayer = _gameService.AddPlayer(demoRoomId, Context.ConnectionId, playerName);
+                await Groups.AddToGroupAsync(Context.ConnectionId, demoRoomId);
+                
+                // Send the room ID back to the joining player with demo mode flag
+                await Clients.Caller.SendAsync("RoomCreated", demoRoomId);
+                await Clients.Caller.SendAsync("DemoModeEnabled");
+                _logger.LogInformation($"[JoinRoom] DEMO room created: {demoRoomId} in test mode");
+                return;
+            }
+
             roomId = NormalizeRoomId(roomId);
             playerName = playerName?.Trim() ?? string.Empty;
 
@@ -187,18 +214,26 @@ public class GameHub : Hub
         }
     }
 
-    public async Task SubmitCards(string roomId, List<string> cardIds)
+    public async Task SubmitCards(string roomId, List<string> cardIds, string? onBehalfOfConnectionId = null)
     {
         try
         {
             roomId = NormalizeRoomId(roomId);
-            _gameService.SubmitCards(roomId, Context.ConnectionId, cardIds);
+            
+            // In demo mode, allow submitting on behalf of a test player
+            string effectiveConnectionId = Context.ConnectionId;
+            if (!string.IsNullOrEmpty(onBehalfOfConnectionId) && onBehalfOfConnectionId.StartsWith("test-"))
+            {
+                effectiveConnectionId = onBehalfOfConnectionId;
+            }
+            
+            _gameService.SubmitCards(roomId, effectiveConnectionId, cardIds);
             var room = _gameService.GetRoom(roomId);
             
-            await Clients.Group(roomId).SendAsync("CardSubmitted", Context.ConnectionId);
+            await Clients.Group(roomId).SendAsync("CardSubmitted", effectiveConnectionId);
             await Clients.Group(roomId).SendAsync("GameStateUpdated", room);
             
-            _logger.LogInformation($"Card submitted in room {roomId}");
+            _logger.LogInformation($"Card submitted in room {roomId} by {effectiveConnectionId}");
         }
         catch (Exception ex)
         {
@@ -207,18 +242,26 @@ public class GameHub : Hub
         }
     }
 
-    public async Task SelectWinner(string roomId, string winnerId)
+    public async Task SelectWinner(string roomId, string winnerId, string? onBehalfOfConnectionId = null)
     {
         try
         {
             roomId = NormalizeRoomId(roomId);
+            
+            // In demo mode, allow selecting winner on behalf of a test player (if they're the card czar)
+            string effectiveConnectionId = Context.ConnectionId;
+            if (!string.IsNullOrEmpty(onBehalfOfConnectionId) && onBehalfOfConnectionId.StartsWith("test-"))
+            {
+                effectiveConnectionId = onBehalfOfConnectionId;
+            }
+            
             _gameService.SelectWinner(roomId, winnerId);
             var room = _gameService.GetRoom(roomId);
             
             await Clients.Group(roomId).SendAsync("WinnerSelected", winnerId);
             await Clients.Group(roomId).SendAsync("GameStateUpdated", room);
             
-            _logger.LogInformation($"Winner selected in room {roomId}");
+            _logger.LogInformation($"Winner selected in room {roomId} by {effectiveConnectionId}");
         }
         catch (Exception ex)
         {
@@ -310,6 +353,13 @@ public class GameHub : Hub
                         
                         await Clients.Group(roomId).SendAsync("PlayerLeft", player.Name, newPlayerCount, playerNames);
                         await Clients.Group(roomId).SendAsync("GameStateUpdated", room);
+                        
+                        // Check if this was a demo room (all remaining players are test players)
+                        if (room.Players.All(p => p.ConnectionId.StartsWith("test-")))
+                        {
+                            _logger.LogInformation($"Deleting demo room {roomId} - no real players remaining");
+                            _gameService.DeleteRoom(roomId);
+                        }
                     }
                     
                     // Remove from group
@@ -672,4 +722,71 @@ public class GameHub : Hub
             await Clients.Caller.SendAsync("Error", ex.Message);
         }
     }
+
+    public async Task AddTestPlayer(string roomId, string testPlayerName)
+    {
+        try
+        {
+            roomId = NormalizeRoomId(roomId);
+            testPlayerName = testPlayerName?.Trim() ?? string.Empty;
+            
+            if (string.IsNullOrWhiteSpace(testPlayerName))
+                throw new InvalidOperationException("Test player name is required");
+
+            // Create a fake connection ID for the test player
+            string fakeConnectionId = $"test-{Guid.NewGuid()}";
+            
+            // Add the test player to the room
+            var testPlayer = _gameService.AddPlayer(roomId, fakeConnectionId, testPlayerName);
+            var room = _gameService.GetRoom(roomId);
+            
+            // Notify all players in the room
+            await Clients.Group(roomId).SendAsync("PlayerJoined", testPlayerName, room.Players.Count, room.Players.Select(p => p.Name).ToArray());
+            await Clients.Group(roomId).SendAsync("GameStateUpdated", room);
+            
+            _logger.LogInformation($"Test player '{testPlayerName}' added to room {roomId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding test player");
+            await Clients.Caller.SendAsync("Error", ex.Message);
+        }
+    }
+
+    public async Task RemoveTestPlayer(string roomId, string testPlayerName)
+    {
+        try
+        {
+            roomId = NormalizeRoomId(roomId);
+            testPlayerName = testPlayerName?.Trim() ?? string.Empty;
+            
+            if (string.IsNullOrWhiteSpace(testPlayerName))
+                throw new InvalidOperationException("Test player name is required");
+
+            var room = _gameService.GetRoom(roomId);
+            if (room == null)
+                throw new InvalidOperationException("Room not found");
+
+            // Find and remove the test player
+            var testPlayer = room.Players.FirstOrDefault(p => p.Name == testPlayerName && p.ConnectionId.StartsWith("test-"));
+            if (testPlayer == null)
+                throw new InvalidOperationException($"Test player '{testPlayerName}' not found");
+
+            _gameService.RemovePlayer(roomId, testPlayer.ConnectionId);
+            var playerNames = room.Players.Where(p => p.ConnectionId != testPlayer.ConnectionId).Select(p => p.Name).ToList();
+            
+            // Notify all players in the room
+            await Clients.Group(roomId).SendAsync("PlayerLeft", testPlayerName, room.Players.Count - 1, playerNames);
+            await Clients.Group(roomId).SendAsync("GameStateUpdated", room);
+            
+            _logger.LogInformation($"Test player '{testPlayerName}' removed from room {roomId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing test player");
+            await Clients.Caller.SendAsync("Error", ex.Message);
+        }
+    }
 }
+
+
