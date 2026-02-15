@@ -1112,6 +1112,13 @@ button:disabled {
     overflow-y: auto;
   }
 
+  .card {
+    width: 140px;
+    height: 160px;
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+
   .players-section {
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 8px;
@@ -1120,13 +1127,13 @@ button:disabled {
   }
 
   .black-card-container {
-    margin: 10px 0;
+    margin: 8px 0;
   }
 
   .black-card {
-    min-height: 200px;
-    font-size: 1rem;
-    padding: 15px;
+    min-height: 100px;
+    font-size: 0.8rem;
+    padding: 10px;
   }
 
   .hand-section {
@@ -1139,15 +1146,15 @@ button:disabled {
   }
 
   .cards-container {
-    min-height: 180px;
-    padding: 10px 5px;
+    min-height: 140px;
+    padding: 8px 5px;
   }
 
   .mini-card {
-    width: 140px;
-    height: 180px;
-    font-size: 0.85rem;
-    padding: 10px;
+    width: 110px;
+    height: 150px;
+    font-size: 0.75rem;
+    padding: 8px;
   }
 
   .hand-section-submit {
@@ -1222,5 +1229,49 @@ button:disabled {
   .btn-copy {
     flex: 1 1 auto;
     width: 100%;
+  }
+}
+
+/* Extra small devices (360px+) */
+@media (max-width: 390px) {
+  .players-section {
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 6px;
+    padding: 6px;
+    margin-bottom: 6px;
+  }
+
+  .player-card {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+
+  .player-card h3 {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+
+  .player-card .score {
+    font-size: 0.75rem;
+  }
+
+  .card {
+    width: 120px;
+    height: 140px;
+    padding: 8px;
+    font-size: 0.75rem;
+  }
+
+  .black-card {
+    min-height: 80px;
+    font-size: 0.7rem;
+    padding: 8px;
+  }
+
+  .mini-card {
+    width: 100px;
+    height: 140px;
+    font-size: 0.7rem;
+    padding: 6px;
   }
 }
