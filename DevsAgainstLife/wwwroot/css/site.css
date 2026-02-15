@@ -1088,10 +1088,123 @@ button:disabled {
 
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
+  body {
+    margin-bottom: 20px;
+  }
+
+  .container {
+    padding: 5px;
+    margin-top: 0;
+  }
+
+  .game-header {
+    padding: 8px 15px;
+    min-height: auto;
+  }
+
+  .game-title {
+    font-size: 1.3rem;
+  }
+
+  #gameBoard {
+    padding: 10px;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .players-section {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+
+  .black-card-container {
+    margin: 10px 0;
+  }
+
+  .black-card {
+    min-height: 200px;
+    font-size: 1rem;
+    padding: 15px;
+  }
+
+  .hand-section {
+    margin-top: 15px;
+  }
+
+  .hand-section h2 {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+
+  .cards-container {
+    min-height: 180px;
+    padding: 10px 5px;
+  }
+
+  .mini-card {
+    width: 140px;
+    height: 180px;
+    font-size: 0.85rem;
+    padding: 10px;
+  }
+
+  .hand-section-submit {
+    margin-top: 10px;
+  }
+
+  #submitCardsBtn {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+  }
+
   #lobby {
-    margin: 20px auto;
-    padding: 20px;
-    max-width: 95%;
+    margin: 10px auto;
+    padding: 15px;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .how-to-play-box {
+    padding: 12px;
+    margin-bottom: 15px;
+  }
+
+  .how-to-play-title {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+
+  .how-to-play-list {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 0;
+  }
+
+  .input-group {
+    margin-bottom: 12px;
+  }
+
+  label {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+  }
+
+  input {
+    padding: 10px;
+  }
+
+  .btn-large,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
   }
 
   .share-link-container {
