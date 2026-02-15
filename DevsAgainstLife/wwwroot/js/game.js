@@ -224,11 +224,30 @@ async function initializeConnection() {
             const nameEl = document.getElementById('leftPlayerNameCreator');
             const waitNameEl = document.getElementById('waitPlayerName');
             const modalEl = document.getElementById('playerLeftCreatorModal');
+            const restartGameBtn = document.getElementById('restartGameBtn');
+            const exitGameBtn = document.getElementById('exitGameBtn');
             console.log("Name element found:", !!nameEl);
             console.log("Modal element found:", !!modalEl);
             
             if (nameEl) nameEl.textContent = playerName;
             if (waitNameEl) waitNameEl.textContent = playerName;
+            
+            // Check if there are enough players to restart (need at least 3 remaining for a 3-player minimum game)
+            // Subtract 1 because the player who left is still in the gameState.players array at this point
+            const remainingPlayers = (gameState?.players?.length || 0) - 1;
+            const hasEnoughPlayers = remainingPlayers >= 3;
+            
+            console.log("Players in gameState:", gameState?.players?.length, "Remaining after leave:", remainingPlayers, "Enough to restart?", hasEnoughPlayers);
+            
+            // Show restart game if enough players, otherwise show exit game
+            if (hasEnoughPlayers) {
+                restartGameBtn?.classList.remove('hidden');
+                exitGameBtn?.classList.add('hidden');
+            } else {
+                restartGameBtn?.classList.add('hidden');
+                exitGameBtn?.classList.remove('hidden');
+            }
+            
             if (modalEl) {
                 modalEl.classList.remove('hidden');
                 console.log("Modal classes:", modalEl.className);
@@ -352,6 +371,15 @@ async function initializeConnection() {
         enableJoinControls();
         document.getElementById('lobby').style.display = 'block';
         document.getElementById('gameBoard').style.display = 'none';
+        
+        // Clear lobby status to remove old player list
+        const lobbyStatus = document.getElementById('lobbyStatus');
+        if (lobbyStatus) {
+            lobbyStatus.innerHTML = '';
+        }
+        
+        // Update welcome header to hide it
+        updateWelcomeHeader();
     });
 
     connection.on("RoomDeleted", (message) => {
