@@ -793,6 +793,7 @@ button:disabled {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: flex-end;
 }
 
 .submitted-card-group {
@@ -805,6 +806,7 @@ button:disabled {
   border: 2px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
+  justify-content: flex-end;
 }
 
 .submitted-card-group[style*="cursor: pointer"]:hover {
@@ -817,6 +819,18 @@ button:disabled {
 .submitted-card-group .white-card {
   width: 170px;
   height: 220px;
+}
+
+.placeholder-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: bold;
+  color: #666 !important;
+  opacity: 0.6;
+  background: #777 !important;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
 }
 
 /* Status Messages */

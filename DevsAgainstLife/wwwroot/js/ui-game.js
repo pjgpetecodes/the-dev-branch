@@ -162,8 +162,14 @@ function renderSubmittedCards() {
         section.classList.remove('hidden', 'submitted-cards-collapsed', 'submitted-cards-placeholder');
     }
 
-    // Only show submissions to czar or during judging/later states
-    const shouldShowSubmissions = currentPlayer.isCardCzar || (gameState?.state >= 2);
+    const isPlayingPhase = gameState?.state === 1;
+    const isJudgingPhase = gameState?.state >= 2;
+    const playerHasSubmitted = currentPlayer.hasSubmitted && !currentPlayer.isCardCzar;
+    const anyPlayerSubmitted = gameState?.submittedCards && Object.keys(gameState.submittedCards).length > 0;
+    
+    // Show submissions to czar, during judging/later states, or to anyone during playing phase if someone submitted
+    const shouldShowSubmissions = currentPlayer.isCardCzar || isJudgingPhase || (isPlayingPhase && anyPlayerSubmitted);
+    
     if (!shouldShowSubmissions || !gameState?.submittedCards || Object.keys(gameState.submittedCards).length === 0) {
         subsEl.innerHTML = '<p>No submissions yet</p>';
         if (section && !shouldShowSubmissions) {
@@ -178,11 +184,34 @@ function renderSubmittedCards() {
     }
 
     const groupsData = [];
+    const playersWhoSubmitted = new Set(Object.keys(gameState.submittedCards));
+    
+    // First, add current player's own cards if they have submitted and are not the czar
+    if (currentPlayer.hasSubmitted && !currentPlayer.isCardCzar && (isPlayingPhase || isJudgingPhase)) {
+        if (currentPlayer.selectedCards && currentPlayer.selectedCards.length > 0) {
+            groupsData.push({ 
+                playerId: currentConnectionId, 
+                cards: currentPlayer.selectedCards, 
+                isPlaceholder: false,
+                isCurrentPlayerCard: true
+            });
+        }
+    }
+    
+    // Then add other players' cards from the submittedCards dict
     Object.entries(gameState.submittedCards).forEach(([playerId, cardIds]) => {
+        // Skip if this is the current player (already added above)
+        if (playerId === currentConnectionId) {
+            return;
+        }
+        
         const player = gameState.players.find(p => p.connectionId === playerId);
+        const isCurrentPlayer = playerId === currentConnectionId;
+        const revealCards = isJudgingPhase || currentPlayer.isCardCzar || (isPlayingPhase && isCurrentPlayer);
+        
         const cards = [];
 
-        if (Array.isArray(cardIds)) {
+        if (revealCards && Array.isArray(cardIds)) {
             cardIds.forEach(cardId => {
                 const card = player?.hand?.find(c => c.id === cardId);
                 if (card) {
@@ -190,31 +219,57 @@ function renderSubmittedCards() {
                 }
             });
         }
-
-        if (cards.length > 0) {
-            groupsData.push({ playerId, cards });
+        
+        if (revealCards && cards.length > 0) {
+            groupsData.push({ playerId, cards, isPlaceholder: false });
+        } else if (isPlayingPhase && !isCurrentPlayer) {
+            // Show placeholder for other players who submitted during playing phase
+            groupsData.push({ playerId, cards: [], isPlaceholder: true, cardCount: Array.isArray(cardIds) ? cardIds.length : 1 });
         }
     });
-
-    if (currentPlayer.isCardCzar) {
+    
+    if (currentPlayer.isCardCzar && isJudgingPhase) {
         for (let i = groupsData.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [groupsData[i], groupsData[j]] = [groupsData[j], groupsData[i]];
         }
     }
 
-    groupsData.forEach(({ playerId, cards }) => {
+    groupsData.forEach(({ playerId, cards, isPlaceholder, cardCount, isCurrentPlayerCard }) => {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'submitted-card-group';
+        
+        // Add player name/label if it's the current player
+        if (isCurrentPlayerCard) {
+            const labelDiv = document.createElement('div');
+            labelDiv.style.textAlign = 'center';
+            labelDiv.style.fontSize = '0.9em';
+            labelDiv.style.color = '#999';
+            labelDiv.style.marginBottom = '8px';
+            labelDiv.textContent = '(Your submission)';
+            groupDiv.appendChild(labelDiv);
+        }
 
-        cards.forEach(card => {
-            const cardDiv = document.createElement('div');
-            cardDiv.className = 'card white-card';
-            cardDiv.textContent = card.text;
-            groupDiv.appendChild(cardDiv);
-        });
+        if (isPlaceholder) {
+            // Show placeholder cards with question mark
+            for (let i = 0; i < cardCount; i++) {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card white-card placeholder-card';
+                cardDiv.textContent = '?';
+                cardDiv.style.opacity = '0.6';
+                cardDiv.style.backgroundColor = '#999';
+                groupDiv.appendChild(cardDiv);
+            }
+        } else {
+            cards.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card white-card';
+                cardDiv.textContent = card.text;
+                groupDiv.appendChild(cardDiv);
+            });
+        }
 
-        if (currentPlayer.isCardCzar) {
+        if (currentPlayer.isCardCzar && !isPlaceholder) {
             groupDiv.onclick = () => selectWinner(playerId);
             groupDiv.style.cursor = 'pointer';
         }
@@ -292,10 +347,18 @@ function updateGameStateUI() {
                 } else {
                     showStatus('You are the Card Czar! All players have submitted. Time to choose!');
                 }
+                renderSubmittedCards(); // Card czar always sees submitted cards
             } else if (currentPlayer.hasSubmitted) {
                 const playerCount = getPlayerSubmissionCount();
                 showStatus(`Cards submitted! Waiting for ${playerCount.remaining} out of ${playerCount.total} player${playerCount.total !== 1 ? 's' : ''}...`);
+                renderSubmittedCards(); // Show submitted cards while waiting for others
             } else {
+                // Show submissions from other players even if current player hasn't submitted
+                const hasAnySubmissions = gameState.submittedCards && Object.keys(gameState.submittedCards).length > 0;
+                if (hasAnySubmissions) {
+                    renderSubmittedCards(); // Show other players' placeholder cards
+                }
+                
                 const pickCount = gameState?.currentBlackCard?.pickCount ?? gameState?.currentBlackCard?.pick ?? 1;
                 const selectedCount = currentPlayer.selectedCards.length;
 
@@ -391,26 +454,23 @@ function updateSubmittedCardsPresentation() {
     const section = document.getElementById('submittedCardsSection');
     if (!cardsWrapper || !section || !gameState) return;
 
-    const shouldPlaceholder =
-        gameState.state === 1 && !currentPlayer.isCardCzar && currentPlayer.hasSubmitted;
+    const hasSubmissions = gameState.submittedCards && Object.keys(gameState.submittedCards).length > 0;
+    const shouldShowCards = gameState.state === 1 && !currentPlayer.isCardCzar && hasSubmissions;
+    const isJudgingOrLater = gameState.state >= 2;
 
-    if (shouldPlaceholder) {
-        section.classList.remove('hidden', 'submitted-cards-placeholder');
-        section.classList.add('submitted-cards-collapsed');
+    if (shouldShowCards) {
+        // Show cards while waiting for others to submit
+        section.classList.remove('hidden', 'submitted-cards-collapsed', 'submitted-cards-placeholder');
         cardsWrapper.classList.add('awaiting-judging');
-
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                section.classList.remove('submitted-cards-collapsed');
-                section.classList.add('submitted-cards-placeholder');
-            });
-        });
-    } else if (gameState.state !== 2) {
-        cardsWrapper.classList.remove('awaiting-judging');
-        section.classList.remove('submitted-cards-collapsed', 'submitted-cards-placeholder');
-        section.classList.add('hidden');
+    } else if (isJudgingOrLater) {
+        // Show all cards during judging phase
+        cardsWrapper.classList.add('awaiting-judging');
+        section.classList.remove('hidden', 'submitted-cards-collapsed', 'submitted-cards-placeholder');
     } else {
-        cardsWrapper.classList.add('awaiting-judging');
+        // Hide completely when waiting for first card submission
+        cardsWrapper.classList.remove('awaiting-judging');
+        section.classList.add('hidden');
+        section.classList.remove('submitted-cards-collapsed', 'submitted-cards-placeholder');
     }
 }
 
@@ -422,10 +482,11 @@ function showNextRoundButton() {
     const statusMsg = document.getElementById('statusMessage');
     if (!statusMsg) return;
 
-    // Check if this is the last round
+    // Check if this is the last round or a decider round
     const isLastRound = gameState?.currentRound >= totalRounds;
-    const buttonText = isLastRound ? 'Show Scores' : 'Next Round';
-    const buttonMessage = isLastRound ? 'Click Show Scores to see final standings.' : 'You are the Card Czar! Click Next Round to continue.';
+    const isDecider = gameState?.isDeciderRound;
+    const buttonText = isDecider ? 'Start Decider Round' : (isLastRound ? 'Show Scores' : 'Next Round');
+    const buttonMessage = isDecider ? '⚡ It\'s a tie! Click to play the Decider Round!' : (isLastRound ? 'Click Show Scores to see final standings.' : 'You are the Card Czar! Click Next Round to continue.');
 
     let btn = document.getElementById('nextRoundBtn');
     if (!btn) {

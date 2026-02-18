@@ -348,10 +348,13 @@ async function playAgain() {
 }
 
 async function exitGame() {
+    if (!confirm('Are you sure you want to leave the game?')) {
+        return;
+    }
+
     try {
         // Return to lobby
         await connection.invoke("LeaveRoom", currentRoomId);
-        leaveRoom();
     } catch (err) {
         console.error("Error exiting game:", err);
         showError(err.message || "Failed to exit game");

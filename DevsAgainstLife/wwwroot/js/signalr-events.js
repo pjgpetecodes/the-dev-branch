@@ -68,6 +68,7 @@ function initializeSignalREvents() {
         if (headerEl) headerEl.style.display = 'block';
         if (logoEl) logoEl.classList.add('hidden');
         document.body.classList.remove('in-game');
+        document.body.classList.remove('czar-active');
         document.getElementById('leaveGameBtn')?.classList.add('hidden');
 
         hideGameOver();
@@ -147,8 +148,9 @@ function initializeSignalREvents() {
                     currentPlayer.hasSubmitted = true;
                     console.log("Restored selected cards on rejoin:", currentPlayer.selectedCards);
                 } else {
-                    currentPlayer.selectedCards = [];
+                    // Only reset if we haven't started selecting yet, otherwise preserve client-side selections
                     currentPlayer.hasSubmitted = false;
+                    // Don't reset selectedCards here - preserve client-side selections made before GameStateUpdated arrived
                 }
             }
         }
@@ -247,6 +249,9 @@ function initializeSignalREvents() {
         const isCreator = connection.connectionId === creatorConnectionId;
         console.log("Is current player the creator?", isCreator);
         
+        // Reset czar styling in case Card Czar left
+        document.body.classList.remove('czar-active');
+        
         if (isCreator) {
             console.log("Showing creator modal");
             const nameEl = document.getElementById('leftPlayerNameCreator');
@@ -314,6 +319,7 @@ function initializeSignalREvents() {
         updateWelcomeHeader();
         document.getElementById('playerLeftModal').classList.add('hidden');
         document.getElementById('playerLeftCreatorModal').classList.add('hidden');
+        document.body.classList.remove('czar-active');
         showStatus("Round restarted!");
     });
 
@@ -328,11 +334,15 @@ function initializeSignalREvents() {
         updateWelcomeHeader();
         document.getElementById('playerLeftModal').classList.add('hidden');
         document.getElementById('playerLeftCreatorModal').classList.add('hidden');
+        document.body.classList.remove('czar-active');
         showStatus("Game restarted!");
     });
 
     connection.on("NotEnoughPlayersAfterLeave", (leftPlayerName, remainingPlayerCount, creatorConnectionId) => {
         console.log("Not enough players left:", leftPlayerName, "Remaining:", remainingPlayerCount);
+        
+        // Reset czar styling in case Card Czar left
+        document.body.classList.remove('czar-active');
         
         if (connection.connectionId === creatorConnectionId) {
             document.getElementById('leftPlayerNameCreatorNotEnough').textContent = leftPlayerName;
