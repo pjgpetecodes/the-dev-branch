@@ -9,7 +9,7 @@ Date: 2026-02-06
 1. **XSS Prevention in JavaScript**
    - **Issue**: User-provided player names were inserted into the DOM using `innerHTML`, which could allow XSS attacks if a malicious player used HTML/JavaScript in their name.
    - **Fix**: Replaced all `innerHTML` assignments with proper DOM manipulation using `textContent` for user-provided data.
-   - **Files affected**: `DevsAgainstLife/wwwroot/js/game.js`
+   - **Files affected**: `TheDevBranch/wwwroot/js/game.js`
 
 ### Security Best Practices Implemented
 
@@ -66,3 +66,4 @@ Date: 2026-02-06
 ## Conclusion
 
 All critical security vulnerabilities have been addressed. The application follows security best practices for a real-time web application. No secrets are exposed in the codebase, and user input is properly sanitized before display.
+

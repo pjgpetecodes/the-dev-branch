@@ -1,6 +1,6 @@
-using DevsAgainstLife.Models;
+using TheDevBranch.Models;
 
-namespace DevsAgainstLife.Services;
+namespace TheDevBranch.Services;
 
 public interface ICardService
 {
@@ -145,3 +145,4 @@ public class CardService : ICardService
         _logger.LogInformation($"Updated {_whiteCards.Count} white cards");
     }
 }
+

@@ -1,4 +1,4 @@
-# Developers Against Humanity Online
+# The Dev Branch
 
 An online multiplayer card game inspired by Cards Against Humanity, but tailored for developers! This web-based game supports 10+ players in real-time using ASP.NET Core and SignalR.
 
@@ -29,13 +29,13 @@ An online multiplayer card game inspired by Cards Against Humanity, but tailored
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/pjgpetecodes/developers-against-humanity-online.git
-cd developers-against-humanity-online
+git clone https://github.com/pjgpetecodes/the-dev-branch.git
+cd the-dev-branch
 ```
 
 2. Navigate to the application directory:
 ```bash
-cd DevsAgainstLife
+cd TheDevBranch
 ```
 
 3. Run the application:
@@ -131,13 +131,13 @@ az login
 
 2. Create a resource group:
 ```bash
-az group create --name dev-against-humanity-rg --location eastus
+az group create --name the-dev-branch-rg --location eastus
 ```
 
 3. Deploy the Bicep template:
 ```bash
 az deployment group create \
-  --resource-group dev-against-humanity-rg \
+  --resource-group the-dev-branch-rg \
   --template-file infrastructure/main.bicep
 ```
 
@@ -163,14 +163,14 @@ You can also deploy using Docker:
 
 ```bash
 # Build the image
-docker build -t developers-against-humanity .
+docker build -t the-dev-branch .
 
 # Run locally
-docker run -p 8080:80 developers-against-humanity
+docker run -p 8080:80 the-dev-branch
 
 # Push to container registry
-docker tag developers-against-humanity your-registry/developers-against-humanity
-docker push your-registry/developers-against-humanity
+docker tag the-dev-branch your-registry/the-dev-branch
+docker push your-registry/the-dev-branch
 ```
 
 ## 🏗️ Architecture
@@ -185,7 +185,7 @@ docker push your-registry/developers-against-humanity
 
 ```
 .
-├── DevsAgainstLife/
+├── TheDevBranch/
 │   ├── Hubs/                  # SignalR hubs
 │   ├── Models/                # Game models (Player, Card, GameRoom)
 │   ├── Services/              # Business logic (CardService, GameService)
@@ -200,9 +200,9 @@ docker push your-registry/developers-against-humanity
 
 You can customize the game by editing the card files:
 
-- `DevsAgainstLife/Data/black-cards.txt`: Question/prompt cards (one per line)
-- `DevsAgainstLife/Data/white-cards.txt`: Answer cards (one per line)
-- `DevsAgainstLife/Data/takedowns.txt`: Snarky takedown messages (one per line)
+- `TheDevBranch/Data/black-cards.txt`: Question/prompt cards (one per line)
+- `TheDevBranch/Data/white-cards.txt`: Answer cards (one per line)
+- `TheDevBranch/Data/takedowns.txt`: Snarky takedown messages (one per line)
 
 The game automatically loads these files on startup.
 
@@ -241,4 +241,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Inspired by Cards Against Humanity
 - Built with love for the developer community
+
+
 

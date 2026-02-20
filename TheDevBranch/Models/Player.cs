@@ -1,4 +1,4 @@
-namespace DevsAgainstLife.Models;
+namespace TheDevBranch.Models;
 
 public class Player
 {
@@ -9,3 +9,4 @@ public class Player
     public bool IsCardCzar { get; set; }
     public List<string> SelectedCardIds { get; set; } = new();
 }
+

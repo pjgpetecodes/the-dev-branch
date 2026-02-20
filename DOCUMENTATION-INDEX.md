@@ -79,33 +79,33 @@ Quick reference to all documentation files in this repository.
 ### Deploy Infrastructure
 ```bash
 az login
-az group create --name dev-against-humanity-rg --location eastus
+az group create --name the-dev-branch-rg --location eastus
 az deployment group create \
-  --resource-group dev-against-humanity-rg \
+   --resource-group the-dev-branch-rg \
   --template-file infrastructure/main.bicep
 ```
 
 ### Deploy Code (Direct)
 ```bash
-cd DevsAgainstLife
+cd TheDevBranch
 dotnet publish -c Release -o ./publish
 cd publish && zip -r ../deploy.zip . && cd ..
 az webapp deployment source config-zip \
   --name YOUR-WEBAPP-NAME \
-  --resource-group dev-against-humanity-rg \
+   --resource-group the-dev-branch-rg \
   --src deploy.zip
 ```
 
 ### Run Locally
 ```bash
-cd DevsAgainstLife
+cd TheDevBranch
 dotnet run
 # Open https://localhost:5001
 ```
 
 ### Delete Everything
 ```bash
-az group delete --name dev-against-humanity-rg --yes
+az group delete --name the-dev-branch-rg --yes
 ```
 
 ## 📊 Documentation Structure
@@ -196,3 +196,5 @@ Documentation/
 3. **Want to understand the project?** → [README.md](README.md)
 
 **Most users start with**: [AZURE-DEPLOY-SUMMARY.md](AZURE-DEPLOY-SUMMARY.md) 🚀
+
+

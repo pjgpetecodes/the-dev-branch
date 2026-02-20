@@ -1,4 +1,4 @@
-namespace DevsAgainstLife.Models;
+namespace TheDevBranch.Models;
 
 public class GameRoom
 {
@@ -30,3 +30,4 @@ public enum GameState
     RoundOver,
     GameOver
 }
+

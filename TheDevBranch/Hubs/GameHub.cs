@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.SignalR;
-using DevsAgainstLife.Services;
-using DevsAgainstLife.Models;
+using TheDevBranch.Services;
+using TheDevBranch.Models;
 
-namespace DevsAgainstLife.Hubs;
+namespace TheDevBranch.Hubs;
 
 public class GameHub : Hub
 {
@@ -871,5 +871,6 @@ public class GameHub : Hub
         }
     }
 }
+
 
 

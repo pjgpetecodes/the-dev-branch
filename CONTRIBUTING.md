@@ -1,4 +1,4 @@
-# Contributing to Developers Against Humanity Online
+# Contributing to The Dev Branch
 
 Thank you for your interest in contributing! This document provides guidelines for contributing to the project.
 
@@ -36,7 +36,7 @@ Feature requests are welcome! Please:
 
 4. **Test your changes**
    ```bash
-   cd DevsAgainstLife
+   cd TheDevBranch
    dotnet build
    dotnet run
    ```
@@ -74,7 +74,7 @@ Feature requests are welcome! Please:
 ## Project Structure
 
 ```
-DevsAgainstLife/
+TheDevBranch/
 ├── Hubs/              # SignalR hubs
 ├── Models/            # Data models
 ├── Services/          # Business logic
@@ -154,3 +154,5 @@ By contributing, you agree that your contributions will be licensed under the MI
 Be respectful and inclusive. We want this to be a welcoming community for everyone.
 
 Thank you for contributing! 🎮
+
+

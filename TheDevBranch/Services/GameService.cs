@@ -1,6 +1,6 @@
-using DevsAgainstLife.Models;
+using TheDevBranch.Models;
 
-namespace DevsAgainstLife.Services;
+namespace TheDevBranch.Services;
 
 public interface IGameService
 {
@@ -430,3 +430,4 @@ public class GameService : IGameService
         room.LastIdleWarningUtc = null;
     }
 }
+

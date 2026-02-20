@@ -1,7 +1,7 @@
-using DevsAgainstLife.Hubs;
+using TheDevBranch.Hubs;
 using Microsoft.AspNetCore.SignalR;
 
-namespace DevsAgainstLife.Services;
+namespace TheDevBranch.Services;
 
 public class RoomCleanupService : BackgroundService
 {
@@ -107,3 +107,4 @@ public class RoomCleanupService : BackgroundService
         }
     }
 }
+

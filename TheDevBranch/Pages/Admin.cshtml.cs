@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace DevsAgainstLife.Pages;
+namespace TheDevBranch.Pages;
 
 public class AdminModel : PageModel
 {
@@ -8,3 +8,4 @@ public class AdminModel : PageModel
     {
     }
 }
+

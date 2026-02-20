@@ -1,5 +1,5 @@
-using DevsAgainstLife.Hubs;
-using DevsAgainstLife.Services;
+using TheDevBranch.Hubs;
+using TheDevBranch.Services;
 using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -141,13 +141,13 @@ app.MapPost("/admin/cards", async (HttpContext context, ICardService cardService
         return Results.BadRequest("Invalid request body");
     }
 
-    var blackCards = request.BlackCards.Select(c => new DevsAgainstLife.Models.BlackCard
+    var blackCards = request.BlackCards.Select(c => new TheDevBranch.Models.BlackCard
     {
         Text = c.Text,
         PickCount = c.PickCount > 0 ? c.PickCount : 1
     }).ToList();
 
-    var whiteCards = request.WhiteCards.Select(c => new DevsAgainstLife.Models.WhiteCard
+    var whiteCards = request.WhiteCards.Select(c => new TheDevBranch.Models.WhiteCard
     {
         Text = c.Text
     }).ToList();
@@ -171,3 +171,4 @@ public class CardData
     public string Text { get; set; } = string.Empty;
     public int PickCount { get; set; } = 1;
 }
+
