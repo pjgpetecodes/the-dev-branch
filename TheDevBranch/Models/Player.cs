@@ -1,4 +1,4 @@
-namespace DevsAgainstLife.Models;
+namespace TheDevBranch.Models;
 
 public class Player
 {

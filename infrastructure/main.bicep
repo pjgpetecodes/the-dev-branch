@@ -1,5 +1,5 @@
 @description('The name of the web app')
-param appName string = 'devs-against-life-${uniqueString(resourceGroup().id)}'
+param appName string = 'the-dev-branch-${uniqueString(resourceGroup().id)}'
 
 @description('Location for all resources')
 param location string = resourceGroup().location

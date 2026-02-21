@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This is the **detailed deployment guide** for Developers Against Humanity.
+This is the **detailed deployment guide** for The Dev Branch.
 
 > **Quick Start**: For streamlined deployment instructions, see [QUICKSTART.md](QUICKSTART.md)
 
@@ -34,16 +34,16 @@ az login
 2. Create a resource group:
 ```bash
 az group create \
-  --name dev-against-humanity-rg \
+  --name the-dev-branch-rg \
   --location eastus
 ```
 
 3. Deploy the infrastructure:
 ```bash
 az deployment group create \
-  --resource-group dev-against-humanity-rg \
+  --resource-group the-dev-branch-rg \
   --template-file infrastructure/main.bicep \
-  --parameters appName=dev-against-humanity-<your-unique-id>
+  --parameters appName=the-dev-branch-<your-unique-id>
 ```
 
 4. Note the output values (web app name and URL).
@@ -121,16 +121,16 @@ To support more concurrent players:
 1. Scale up: Increase App Service Plan tier
 ```bash
 az appservice plan update \
-  --name dev-against-humanity-plan \
-  --resource-group dev-against-humanity-rg \
+  --name the-dev-branch-plan \
+  --resource-group the-dev-branch-rg \
   --sku S1
 ```
 
 2. Scale out: Add more instances
 ```bash
 az appservice plan update \
-  --name dev-against-humanity-plan \
-  --resource-group dev-against-humanity-rg \
+  --name the-dev-branch-plan \
+  --resource-group the-dev-branch-rg \
   --number-of-workers 2
 ```
 

@@ -36,12 +36,12 @@ az login
 
 # 2. Create a resource group
 az group create \
-  --name dev-against-humanity-rg \
+  --name the-dev-branch-rg \
   --location eastus
 
 # 3. Deploy everything (Web App, App Insights, etc.)
 az deployment group create \
-  --resource-group dev-against-humanity-rg \
+  --resource-group the-dev-branch-rg \
   --template-file infrastructure/main.bicep
 ```
 
@@ -55,14 +55,14 @@ az deployment group create \
 
 **Option A - Quick (Direct Deploy)**:
 ```bash
-cd DevsAgainstLife
+cd TheDevBranch
 dotnet publish -c Release -o ./publish
 cd publish
 zip -r ../deploy.zip .
 cd ..
 az webapp deployment source config-zip \
   --name YOUR-WEBAPP-NAME \
-  --resource-group dev-against-humanity-rg \
+  --resource-group the-dev-branch-rg \
   --src deploy.zip
 ```
 
@@ -92,8 +92,8 @@ See [QUICKSTART.md](QUICKSTART.md) for detailed instructions.
 ### Where Are Resources Created?
 
 - **Location**: East US (default, can be changed)
-- **Resource Group**: `dev-against-humanity-rg`
-- **Naming**: Web app gets unique name like `dev-against-humanity-abc123`
+- **Resource Group**: `the-dev-branch-rg`
+- **Naming**: Web app gets unique name like `the-dev-branch-abc123`
 
 ---
 
@@ -167,7 +167,7 @@ A: No, the Bicep template configures everything (WebSockets, HTTPS, etc.)
 A: Yes, you can add a custom domain in Azure Portal after deployment
 
 **Q: What if I want to delete everything?**  
-A: Run: `az group delete --name dev-against-humanity-rg --yes`
+A: Run: `az group delete --name the-dev-branch-rg --yes`
 
 ---
 

@@ -18,7 +18,7 @@ Alternative CDNs to try:
 Use LibMan to install SignalR locally:
 
 ```bash
-cd DevsAgainstLife
+cd TheDevBranch
 dotnet tool install -g Microsoft.Web.LibraryManager.Cli
 libman install @microsoft/signalr@7.0.0 -p unpkg -d wwwroot/lib/signalr
 ```
@@ -43,7 +43,7 @@ To test the multiplayer functionality locally:
 
 1. Start the application:
 ```bash
-cd DevsAgainstLife
+cd TheDevBranch
 dotnet run
 ```
 
@@ -70,7 +70,7 @@ If you see "signalR is not defined" errors, the CDN is blocked. Use one of the o
 Ensure your firewall allows WebSocket connections on the port being used.
 
 ### Cards Not Loading
-Verify that `black-cards.txt` and `white-cards.txt` exist in the repository root directory (one level up from DevsAgainstLife folder).
+Verify that `black-cards.txt` and `white-cards.txt` exist in the repository root directory (one level up from TheDevBranch folder).
 
 ## Production Deployment
 

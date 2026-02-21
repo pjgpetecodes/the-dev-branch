@@ -1,6 +1,6 @@
-using DevsAgainstLife.Models;
+using TheDevBranch.Models;
 
-namespace DevsAgainstLife.Services;
+namespace TheDevBranch.Services;
 
 public interface ICardService
 {
