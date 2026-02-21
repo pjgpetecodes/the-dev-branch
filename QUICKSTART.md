@@ -1,6 +1,6 @@
 # Quick Start: Deploy to Your Azure Subscription
 
-This guide helps you deploy Developers Against Humanity to your **existing Azure subscription**. The deployment will automatically create all necessary resources (Web App, App Service Plan, Application Insights, etc.).
+This guide helps you deploy The Dev Branch to your **existing Azure subscription**. The deployment will automatically create all necessary resources (Web App, App Service Plan, Application Insights, etc.).
 
 > **Don't have Azure yet?** Get a [free Azure account](https://azure.microsoft.com/free/) with $200 credit.
 
@@ -38,16 +38,16 @@ az login
 
 # Create a resource group
 az group create \
-  --name dev-against-humanity-rg \
+  --name the-dev-branch-rg \
   --location eastus
 
 # Deploy the infrastructure (creates Web App, App Insights, etc.)
 az deployment group create \
-  --resource-group dev-against-humanity-rg \
+  --resource-group the-dev-branch-rg \
   --template-file infrastructure/main.bicep
 ```
 
-**Note the output** - you'll see your web app name (like `dev-against-humanity-abc123`).
+**Note the output** - you'll see your web app name (like `the-dev-branch-abc123`).
 
 ### Step 2: Get Publish Profile
 
@@ -55,7 +55,7 @@ az deployment group create \
 # Replace with your actual web app name from step 1
 az webapp deployment list-publishing-profiles \
   --name YOUR-WEBAPP-NAME \
-  --resource-group dev-against-humanity-rg \
+  --resource-group the-dev-branch-rg \
   --xml > publish-profile.xml
 ```
 
@@ -75,7 +75,7 @@ Edit `.github/workflows/azure-deploy.yml`, line 10:
 ```yaml
 env:
   AZURE_WEBAPP_NAME: 'your-webapp-name-here'  # ← Change to your web app name
-  AZURE_WEBAPP_PACKAGE_PATH: './DevsAgainstLife'
+  AZURE_WEBAPP_PACKAGE_PATH: './TheDevBranch'
   DOTNET_VERSION: '8.0.x'
 ```
 
@@ -111,12 +111,12 @@ az login
 
 # Create resource group
 az group create \
-  --name dev-against-humanity-rg \
+  --name the-dev-branch-rg \
   --location eastus
 
 # Deploy infrastructure
 az deployment group create \
-  --resource-group dev-against-humanity-rg \
+  --resource-group the-dev-branch-rg \
   --template-file infrastructure/main.bicep
 ```
 
@@ -126,7 +126,7 @@ Note your web app name from the output.
 
 ```bash
 # Navigate to application folder
-cd DevsAgainstLife
+cd TheDevBranch
 
 # Publish the application
 dotnet publish -c Release -o ./publish
@@ -139,13 +139,13 @@ cd ..
 # Deploy to Azure (replace YOUR-WEBAPP-NAME)
 az webapp deployment source config-zip \
   --name YOUR-WEBAPP-NAME \
-  --resource-group dev-against-humanity-rg \
+  --resource-group the-dev-branch-rg \
   --src deploy.zip
 
 # Clean up
 cd ..
-rm -f DevsAgainstLife/deploy.zip
-rm -rf DevsAgainstLife/publish
+rm -f TheDevBranch/deploy.zip
+rm -rf TheDevBranch/publish
 ```
 
 ---
@@ -156,7 +156,7 @@ rm -rf DevsAgainstLife/publish
    ```bash
    az webapp show \
      --name YOUR-WEBAPP-NAME \
-     --resource-group dev-against-humanity-rg \
+    --resource-group the-dev-branch-rg \
      --query defaultHostName \
      --output tsv
    ```
@@ -179,13 +179,13 @@ rm -rf DevsAgainstLife/publish
 ```bash
 az webapp log tail \
   --name YOUR-WEBAPP-NAME \
-  --resource-group dev-against-humanity-rg
+  --resource-group the-dev-branch-rg
 ```
 
 ### View Application Insights
 
 1. Go to [Azure Portal](https://portal.azure.com)
-2. Navigate to your resource group: `dev-against-humanity-rg`
+2. Navigate to your resource group: `the-dev-branch-rg`
 3. Click on the Application Insights resource
 4. Explore **Live Metrics** for real-time monitoring
 
@@ -209,20 +209,20 @@ az webapp log tail \
 ```bash
 # Get your App Service Plan name
 az appservice plan list \
-  --resource-group dev-against-humanity-rg \
+  --resource-group the-dev-branch-rg \
   --query "[0].name" \
   --output tsv
 
 # Scale up (more powerful instance)
 az appservice plan update \
   --name YOUR-PLAN-NAME \
-  --resource-group dev-against-humanity-rg \
+  --resource-group the-dev-branch-rg \
   --sku S1
 
 # Scale out (more instances for more players)
 az appservice plan update \
   --name YOUR-PLAN-NAME \
-  --resource-group dev-against-humanity-rg \
+  --resource-group the-dev-branch-rg \
   --number-of-workers 2
 ```
 
@@ -232,7 +232,7 @@ When you're done:
 
 ```bash
 az group delete \
-  --name dev-against-humanity-rg \
+  --name the-dev-branch-rg \
   --yes \
   --no-wait
 ```
@@ -243,7 +243,7 @@ az group delete \
 
 ### "Web app not found"
 - Check the web app name is correct (from deployment output)
-- Verify resource group name: `dev-against-humanity-rg`
+- Verify resource group name: `the-dev-branch-rg`
 
 ### "Cards not loading"
 - Ensure `black-cards.txt` and `white-cards.txt` are in repository root
@@ -255,7 +255,7 @@ az group delete \
   ```bash
   az webapp config show \
     --name YOUR-WEBAPP-NAME \
-    --resource-group dev-against-humanity-rg \
+    --resource-group the-dev-branch-rg \
     --query webSocketsEnabled
   ```
 

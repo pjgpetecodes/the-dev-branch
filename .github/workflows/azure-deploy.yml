@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: 'devs-against-life-ospq4bdlaohjk'
-  AZURE_WEBAPP_PACKAGE_PATH: './DevsAgainstLife'
+  AZURE_WEBAPP_NAME: 'the-dev-branch-ospq4bdlaohjk'
+  AZURE_WEBAPP_PACKAGE_PATH: './TheDevBranch'
   DOTNET_VERSION: '8.0.x'
 
 jobs:
@@ -25,13 +25,13 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Restore dependencies
-      run: dotnet restore ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/DevsAgainstLife.csproj
+      run: dotnet restore ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/TheDevBranch.csproj
 
     - name: Build
-      run: dotnet build ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/DevsAgainstLife.csproj --configuration Release --no-restore
+      run: dotnet build ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/TheDevBranch.csproj --configuration Release --no-restore
 
     - name: Publish
-      run: dotnet publish ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/DevsAgainstLife.csproj --configuration Release --no-build --output ./publish
+      run: dotnet publish ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/TheDevBranch.csproj --configuration Release --no-build --output ./publish
 
     - name: Upload artifact for deployment
       uses: actions/upload-artifact@v4

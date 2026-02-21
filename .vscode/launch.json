@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch The Dev Branch",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build The Dev Branch",
+      "program": "${workspaceFolder}/TheDevBranch/bin/Debug/net8.0/TheDevBranch.dll",
+      "cwd": "${workspaceFolder}/TheDevBranch",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      }
+    }
+  ]
+}
