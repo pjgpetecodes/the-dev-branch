@@ -1,0 +1,45 @@
+Our IoT pilot failed right after we enabled _____.
+Azure IoT Hub is great, but _____ keeps waking the on-call engineer.
+The dashboard said all devices were healthy, then _____ happened.
+The real reason the factory line stopped was _____.
+We provisioned 10,000 devices and forgot _____.
+Our edge gateway was stable until _____ got deployed.
+The postmortem blamed AWS IoT, but everyone knows it was _____.
+Google IoT's long-term roadmap was mostly _____.
+The compliance team approved the release only after _____.
+The CTO called it "digital transformation" and then bought _____.
+What did we send over MQTT at 2 AM? _____.
+Device twin desired properties now include _____.
+The firmware update strategy can be summarized as _____.
+In hindsight, exposing direct methods to _____ was a bad idea.
+Our cold path looked clean until _____ entered the pipeline.
+This month's cloud bill is mostly _____.
+The field engineer fixed everything by unplugging _____.
+The message routing rule accidentally sent production data to _____.
+Burn mode for IoT means _____.
+The quickest way to brick 5,000 devices is _____.
+Our "high availability" architecture still depends on _____.
+The SOC report highlighted suspicious activity from _____.
+The only thing noisier than telemetry is _____.
+When {{PLAYER}} said "it's just a config change," we got _____.
+The AWS migration deck forgot to mention _____.
+The Google migration plan ended with _____.
+Our edge AI demo worked perfectly until _____.
+The device reconnect storm was triggered by _____.
+The incident command channel was full of _____.
+The best IoT security control we forgot was _____.
+The POC became production right after _____.
+The packet loss graph looked like _____.
+Our OT network trusted _____ way too much.
+The plant manager asked for one KPI: _____.
+The root cause was not DNS this time; it was _____.
+Azure Digital Twins would have helped if we had modeled _____.
+We called it predictive maintenance, but it was actually _____.
+The brownfield integration started with OPC UA and ended with _____.
+The easiest way to lose telemetry is _____.
+The architecture review rejected everything except _____.
+The final sign-off required legal approval for _____.
+The SRE handbook says "never automate _____."
+The message that should never be retained is _____.
+We thought we had observability, but we only had _____.
+The customer wanted zero downtime and unlimited _____.

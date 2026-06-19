@@ -12,5 +12,12 @@
     "description": "Developer-team humor focused on agile ceremonies, planning, backlog life, and delivery pressure.",
     "theme": "Agile & Delivery",
     "isDefault": false
+  },
+  {
+    "id": "azure-iot-roast",
+    "name": "Azure IoT Roast Deck",
+    "description": "IoT chaos, device drama, and Azure-first jokes that gently roast AWS and Google IoT.",
+    "theme": "IoT & Azure",
+    "isDefault": false
   }
 ]

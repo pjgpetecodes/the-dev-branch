@@ -1,0 +1,125 @@
+Azure IoT Hub routes that finally make sense
+Device Provisioning Service on the first try
+A device twin that is somehow more accurate than production
+Desired properties set by someone no longer at the company
+Reported properties from firmware three versions behind
+An MQTT topic naming convention from pure chaos
+A reconnect storm at 09:00 Monday
+A certificate rotation plan on a sticky note
+A gateway VM named edge-gateway-final-v2-really
+A direct method call to reboot every forklift
+A firmware update pushed right before lunch
+Telemetry with timestamps from the future
+500,000 duplicate temperature readings
+A sensor that only fails during audits
+An RTOS patch from 2018
+An OPC UA server held together by hope
+A Modbus gateway running in someone's desk drawer
+A PLC that ignores all polite requests
+A Python script called fix_everything.py
+A dashboard that refreshes exactly when leadership walks in
+Time-series data with mystery units
+Anomaly detection tuned by vibes
+Edge modules competing for the same GPU
+A camera stream at one frame per fiscal quarter
+Cloud-to-device messages no one subscribed to
+Device-to-cloud messages with 40MB JSON payloads
+Retained MQTT messages from ancient history
+A dead-letter queue full of regrets
+An event route pointing to the wrong Event Hub
+A hotfix deployed directly from a train
+An ARM template with one missing quote
+Three different tenant IDs in one runbook
+Managed identity permissions set to "figure it out live"
+A Key Vault secret named prod-secret-new-new
+A Shared Access Signature expiring during the demo
+A private endpoint DNS zone no one can resolve
+A firewall rule called temporary-open-all
+An NSG that denies exactly the thing we need
+IoT telemetry tagged as "misc"
+A data lake folder structure designed by coin flip
+Kusto queries copied from a screenshot
+An alert rule that pages everyone except the owner
+An SLO measured in optimism
+An SLA presentation with no math
+A canary deployment to every device at once
+Twin synchronization by manual spreadsheet
+A serial number scanned upside down
+A firmware binary named final_FINAL_signed2.bin
+A rollback plan that says "do not panic"
+Azure Monitor graphs that look like modern art
+Application Insights for a device with 64KB RAM
+An edge container that only starts on Tuesdays
+NTP disabled because "time is relative"
+An AMQP connection that dies when watched
+A rogue simulator pretending to be 2,000 devices
+A custom protocol invented during standup
+Shadow IT running an MQTT broker in a closet
+An API version pinned to whatever still responds
+A cron job that reboots the gateway daily for luck
+A USB serial adapter zip-tied to production hardware
+An environment variable called DISABLE_SECURITY
+A SOC2 control with TODO in the evidence
+A pentest finding titled "everything is reachable"
+An incident bridge with 27 participants and no owner
+A postmortem action item nobody can spell
+A runbook that starts with "if this fails, call Dave"
+An edge ML model that detects chairs as people
+Industrial Wi-Fi that disappears during rain
+Cellular failover data charges from the future
+A satellite link with ping measured in coffee breaks
+A battery-powered sensor streaming 24/7 video
+A geofence event triggered from another continent
+Three clocks and four different time zones
+A floating point bug in a flow meter
+A pressure sensor calibrated in imaginary units
+A QA environment that is literally production
+A production environment called qa2
+An AWS IoT policy written as performance art
+An AWS Greengrass upgrade at 4:59 PM Friday
+An S3 bucket named definitely-not-logs
+CloudWatch alarms muted for "noise reduction"
+An IAM role with stars in every permission
+A migration to AWS that found our same old bugs
+An SNS topic no one remembers creating
+A Kinesis stream consuming budget and hope
+An IoT Rule Action that forwards straight to nowhere
+Google Cloud IoT Core nostalgia
+A migration plan from a product Google retired
+Pub/Sub retries until morale improves
+Cloud Functions cold starts in the middle of alarms
+A BigQuery bill that answers no questions
+Stackdriver logs searching for the word "oops"
+A GCP service account key in a public repo
+A region outage explained by a status page haiku
+Vertex AI confidently wrong in real time
+The architecture diagram with seven clouds and zero arrows
+The "single pane of glass" that needs six browser tabs
+Device identity as a motivational concept
+Security by hidden SSID
+A yaml file with tabs
+A yaml file with feelings
+An edge orchestrator nobody has permission to restart
+A digital twin graph with one node called Thing
+A command payload copied from last year's incident
+An eSIM profile swap during the live demo
+A hand-crafted protobuf parser in JavaScript
+A serial protocol documented in an emoji thread
+A boardroom KPI that says "more AI"
+A budget approval conditioned on "do it cheaper than AWS"
+A vendor slide claiming "Google-scale reliability"
+A proof of concept that survived into payroll season
+{{PLAYER}} saying "I can patch this from my phone"
+{{PLAYER}} disabling retries to "reduce duplicates"
+{{PLAYER}} enabling debug logs in production for one minute
+{{PLAYER}} rotating certs without telling operations
+{{PLAYER}} running load tests on the factory network
+{{PLAYER}} saying "it worked in the simulator"
+{{PLAYER}} creating a dashboard with 19 pie charts
+{{PLAYER}} using admin/admin in a customer demo
+{{PLAYER}} opening port 1883 to the internet
+{{PLAYER}} creating a Terraform drift speedrun
+{{PLAYER}} writing "temporary" on a permanent architecture decision
+{{PLAYER}} merging to main from airport Wi-Fi
+{{PLAYER}} setting retention to forever everywhere
+{{PLAYER}} discovering billing alerts after quarter close
