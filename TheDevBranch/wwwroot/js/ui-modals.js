@@ -62,10 +62,11 @@ function handleModalJoinGame() {
     currentRoomId = modalRoomId;
     
     connection.invoke("JoinRoom", modalRoomId, playerName)
-        .then(() => {
+        .then(async () => {
             console.log("Join request sent successfully");
             hasJoinedRoom = true;
             disableJoinControls();
+            await syncCaptureConsentToHub(captureConsentGranted);
             closeNameEntryModal();
         })
         .catch(err => {
@@ -154,6 +155,56 @@ function handleQuitGame() {
     closeWaitModal();
 }
 
+async function openWebcamConsentModal() {
+    if (captureConsentGranted) {
+        document.dispatchEvent(new CustomEvent('webcamConsentChoiceChanged', {
+            detail: { consentGranted: true }
+        }));
+        return;
+    }
+
+    const modal = document.getElementById('webcamConsentModal');
+    if (!modal) {
+        return;
+    }
+
+    closeAllModals();
+    modal.classList.remove('hidden');
+    modal.classList.add('active');
+}
+
+function closeWebcamConsentModal() {
+    const modal = document.getElementById('webcamConsentModal');
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.remove('active');
+    modal.classList.add('hidden');
+}
+
+async function setWebcamConsentChoice(consentGranted) {
+    let resolvedConsent = !!consentGranted;
+    if (resolvedConsent && typeof requestWebcamConsentAndEnable === 'function') {
+        resolvedConsent = await requestWebcamConsentAndEnable();
+    }
+
+    const optInButton = document.getElementById('openWebcamConsentBtn');
+    document.body.dataset.webcamConsent = resolvedConsent ? 'granted' : 'deferred';
+
+    if (optInButton) {
+        optInButton.textContent = resolvedConsent ? 'Camera Enabled' : 'Enable Camera';
+    }
+
+    document.dispatchEvent(new CustomEvent('webcamConsentChoiceChanged', {
+        detail: { consentGranted: resolvedConsent }
+    }));
+
+    if (!consentGranted || resolvedConsent) {
+        closeWebcamConsentModal();
+    }
+}
+
 function closeAllModals() {
     const modals = document.querySelectorAll('.modal-overlay');
     modals.forEach(modal => {
@@ -161,3 +212,7 @@ function closeAllModals() {
         modal.classList.add('hidden');
     });
 }
+
+window.openWebcamConsentModal = openWebcamConsentModal;
+window.closeWebcamConsentModal = closeWebcamConsentModal;
+window.setWebcamConsentChoice = setWebcamConsentChoice;

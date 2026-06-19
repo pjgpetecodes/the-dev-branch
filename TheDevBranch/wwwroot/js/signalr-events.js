@@ -8,6 +8,7 @@ function initializeSignalREvents() {
         currentRoomId = roomId;
         document.getElementById('roomIdDisplay').textContent = roomId;
         showLobbyStatus(`Room ${roomId} created! Waiting for players...`);
+        syncCaptureConsentToHub(captureConsentGranted);
         updateShareLink();
     });
 
@@ -41,6 +42,7 @@ function initializeSignalREvents() {
     connection.on("RoomCreatorLeft", (creatorName) => {
         console.log("Room creator left:", creatorName);
         showError(`${creatorName} (room creator) left the game. Returning to lobby...`);
+        resetMediaCaptureSession();
         
         // Reset game state
         hasJoinedRoom = false;
@@ -95,6 +97,7 @@ function initializeSignalREvents() {
     // Game state events
     connection.on("GameStateUpdated", (state) => {
         console.log("Game state updated:", state);
+        const previousState = gameState?.state;
         gameState = state;
 
         if (typeof state.currentRound === 'number') {
@@ -174,6 +177,7 @@ function initializeSignalREvents() {
         updateShareLink();
         updateTestPlayersList();
         updateDemoPlayerSwitcherPanel();
+        handleMediaCaptureStateTransition(previousState, state?.state);
     });
 
     connection.on("GameStarted", () => {
@@ -216,6 +220,7 @@ function initializeSignalREvents() {
         console.log("Round started");
         currentPlayer.selectedCards = [];
         currentPlayer.hasSubmitted = false;
+        handleRoundCaptureGalleryCleared();
         hideWinnerDisplay();
         hideNextRoundButton();
         updateRoundDisplay();
@@ -372,6 +377,7 @@ function initializeSignalREvents() {
 
     connection.on("ReturningToLobby", () => {
         console.log("Returning to lobby to wait for more players");
+        resetMediaCaptureSession();
         closeAllModals();
         document.getElementById('lobby').style.display = 'block';
         document.getElementById('gameBoard').style.display = 'none';
@@ -388,6 +394,7 @@ function initializeSignalREvents() {
 
     connection.on("GameQuit", (message) => {
         console.log("Game quit:", message);
+        resetMediaCaptureSession();
         closeAllModals();
         showError(message);
         hasJoinedRoom = false;
@@ -412,6 +419,7 @@ function initializeSignalREvents() {
 
     connection.on("RoomDeleted", (message) => {
         console.log("Room deleted:", message);
+        resetMediaCaptureSession();
         hideIdleWarningModal();
         showError(message);
         setTimeout(() => {
@@ -463,6 +471,23 @@ function initializeSignalREvents() {
     // Takedown events
     connection.on("ReceiveTakedown", (senderName, takedownMessage) => {
         showTakedownNotification(senderName, takedownMessage);
+    });
+
+    // Media capture events
+    connection.on(MEDIA_CAPTURE_HUB_EVENTS.captureConsentUpdated, (connectionId, update) => {
+        handleCaptureConsentUpdated(connectionId, update);
+    });
+
+    connection.on(MEDIA_CAPTURE_HUB_EVENTS.momentCaptureAdded, (item) => {
+        handleMomentCaptureAdded(item);
+    });
+
+    connection.on(MEDIA_CAPTURE_HUB_EVENTS.momentCaptureRejected, (evt) => {
+        handleMomentCaptureRejected(evt);
+    });
+
+    connection.on(MEDIA_CAPTURE_HUB_EVENTS.roundCaptureGalleryCleared, (nextRoundNumber) => {
+        handleRoundCaptureGalleryCleared(nextRoundNumber);
     });
 }
 

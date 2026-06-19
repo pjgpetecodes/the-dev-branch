@@ -175,6 +175,8 @@ public class GameService : IGameService
         var room = GetRoom(roomId);
         if (room == null) return;
 
+        RemoveCaptureConsentForConnection(room, connectionId);
+
         var player = room.Players.FirstOrDefault(p => p.ConnectionId == connectionId);
         if (player != null)
         {
@@ -185,6 +187,7 @@ public class GameService : IGameService
             // If no players left, remove room
             if (room.Players.Count == 0)
             {
+                ClearRoomCaptures(room);
                 _rooms.Remove(roomId);
                 _logger.LogInformation($"Room {roomId} removed (no players)");
             }
@@ -227,6 +230,7 @@ public class GameService : IGameService
 
     private void StartRound(GameRoom room)
     {
+        ClearRoundCaptures(room);
         room.SubmittedCards.Clear();
         room.WinningPlayerId = null;
         room.State = GameState.Playing;
@@ -355,6 +359,8 @@ public class GameService : IGameService
         if (room.State != GameState.RoundOver)
             throw new InvalidOperationException("Not in round over state");
 
+        ClearRoundCaptures(room);
+
         // Remove played cards from hands
         foreach (var player in room.Players.Where(p => !p.IsCardCzar))
         {
@@ -419,6 +425,10 @@ public class GameService : IGameService
     public int ClearRooms()
     {
         var cleared = _rooms.Count;
+        foreach (var room in _rooms.Values)
+        {
+            ClearRoomCaptures(room);
+        }
         _rooms.Clear();
         _logger.LogWarning("All rooms cleared by admin. Cleared {RoomCount} room(s).", cleared);
         return cleared;
@@ -442,6 +452,7 @@ public class GameService : IGameService
             // Clear room state for proper cleanup
             room.Players.Clear();
             room.SubmittedCards.Clear();
+            ClearRoomCaptures(room);
             room.CurrentBlackCard = null;
             room.CurrentRound = 0;
             room.WinningPlayerId = null;
@@ -458,6 +469,28 @@ public class GameService : IGameService
     {
         room.LastActivityUtc = DateTime.UtcNow;
         room.LastIdleWarningUtc = null;
+    }
+
+    private static void ClearRoundCaptures(GameRoom room)
+    {
+        room.RoundCaptures.Clear();
+        room.RoundCaptureTotalBytes = 0;
+    }
+
+    private static void ClearRoomCaptures(GameRoom room)
+    {
+        ClearRoundCaptures(room);
+        room.CaptureConsentByConnectionId.Clear();
+    }
+
+    private static void RemoveCaptureConsentForConnection(GameRoom room, string connectionId)
+    {
+        if (string.IsNullOrWhiteSpace(connectionId))
+        {
+            return;
+        }
+
+        room.CaptureConsentByConnectionId.Remove(connectionId);
     }
 
     private static List<WhiteCard> ShuffleWhiteCards(List<WhiteCard> cards)

@@ -44,3 +44,4 @@ let availableTestPlayerNames = [];
 let usedTestPlayerNames = new Set();
 let isDemoPanelMinimized = localStorage.getItem('demoPanelMinimized') === 'true';
 let modalRoomId = null;
+let captureConsentGranted = false;
