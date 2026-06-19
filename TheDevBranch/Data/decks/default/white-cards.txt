@@ -1,0 +1,406 @@
+Copying code from Stack Overflow
+A missing semicolon
+Regex that actually works
+The production database
+Merge conflicts
+A null pointer exception
+Git blame
+Impostor syndrome
+Turning it off and on again
+Rubber duck debugging
+The "works on my machine" excuse
+A 10x developer
+Legacy code from 2003
+Caffeine addiction
+Commenting out code instead of deleting it
+Hungarian notation
+Enterprise FizzBuzz
+Blockchain
+Cryptocurrency mining in the build server
+Tabs vs spaces holy war
+Agile™ with a capital A
+Daily standup that lasts 2 hours
+Docker containers
+Kubernetes configuration files
+A toxic pull request
+Passive-aggressive code comments
+Technical debt
+Spaghetti code
+The staging environment
+Microservices for a TODO app
+The cloud
+DevOps
+Full-stack developers who are actually just front-end
+A junior developer's first pull request
+Breaking the build on Friday at 5 PM
+Deploying to production on Friday
+The mythical man-month
+Off-by-one errors
+Race conditions
+Deadlocks
+Memory leaks
+An infinite loop
+Hardcoded credentials
+SQL injection vulnerabilities
+Cross-site scripting
+A poorly-timed git push --force
+Accidentally dropping the production database
+Pushing secrets to GitHub
+Mining Bitcoin with AWS credits
+Vim
+Emacs
+VS Code with 47 extensions
+An IDE that takes 10 minutes to start
+JavaScript fatigue
+NPM package managers
+The node_modules folder
+13,000 dependencies for a Hello World app
+CSS that somehow works
+!important
+Browser compatibility issues
+Internet Explorer 6
+Testing in production
+Writing tests after the code is in production
+Code coverage as a measure of quality
+100% code coverage with 0% test quality
+A vanity metric dashboard
+Agile coaches who can't code
+Scrum masters who schedule 6 meetings a day
+Sprint planning that takes longer than the sprint
+Story points that mean nothing
+Velocity as a productivity metric
+Pair programming with someone who doesn't bathe
+Mob programming
+Code reviews that turn into philosophy debates
+Bikeshedding over variable names
+Architecture astronauts
+The senior dev who writes code like it's 1999
+Copy-pasting from tutorials
+Tutorial hell
+A bootcamp graduate on day one
+Leetcode medium
+The whiteboard interview
+FizzBuzz
+Reversing a binary tree
+System design interviews
+Take-home assignments that take 20 hours
+Unpaid coding challenges
+Open offices
+The noisy coworker
+Meetings that could have been an email
+Zoom fatigue
+Calendar Tetris
+Being in back-to-back meetings all day
+Context switching
+Multitasking
+The PM who doesn't understand technical constraints
+A product manager with opinions about the database schema
+Stakeholders who want daily updates
+Giving estimates in hours
+A two-week task estimated as two hours
+Scope creep
+Feature creep
+The client who wants "just one small change"
+"Can you make it pop?"
+"Make it more Web 2.0"
+"Just make it like Facebook"
+Making it responsive
+Mobile-first design
+A website that looks like it's from 2005
+Comic Sans
+Centered divs
+Flexbox
+CSS Grid
+A CSS framework that does everything
+Bootstrap
+Tailwind CSS
+Inline styles
+Magic numbers in code
+Global variables
+Singleton pattern abuse
+God objects
+Classes with 5000 lines
+Functions with 10 parameters
+Callback hell
+Promise hell
+Async/await spaghetti
+Thread.sleep()
+Busy waiting
+Polling instead of webhooks
+Reinventing the wheel
+Not invented here syndrome
+The framework we built ourselves
+A homegrown ORM
+Building a CMS from scratch
+Using MongoDB because it's "web scale"
+NoSQL for everything
+Choosing Redis as primary database
+Eventual consistency
+CAP theorem arguments
+Distributed transactions
+Two-phase commit
+Consensus algorithms
+Raft
+Paxos made simple
+Byzantine fault tolerance
+Blockchain for everything
+Smart contracts
+Web3
+NFTs
+The metaverse
+Cryptocurrency trading bots
+Mining Ethereum on company hardware
+AI
+Machine learning
+Deep learning
+Neural networks
+A neural network that's just if statements
+AutoML
+Jupyter notebooks in production
+Python 2.7 in 2026
+pip install numpy taking 30 minutes
+Conda environments
+Virtual environments
+Version managers for version managers
+The tool that manages your tools
+An incomprehensible bash script
+Makefiles that only work on the author's machine
+Documentation that was last updated in 2015
+README files that say "TODO"
+The docs that tell you to read the code
+RTFM
+Self-documenting code
+Variable names like 'x' and 'data'
+Hungarian notation
+CamelCase
+snake_case
+kebab-case
+Naming things
+Off-by-one errors
+The halting problem
+P vs NP
+Quantum computing
+Big-O notation
+Premature optimization
+Optimizing the wrong thing
+Shaving yaks
+Bikeshedding
+Analysis paralysis
+The perfect solution that never ships
+MVP that's really just a landing page
+Vaporware
+The rewrite that never finishes
+Second system syndrome
+Resume-driven development
+Hype-driven development
+Adopting tech because it's trending on Hacker News
+Yet another JavaScript framework
+The framework that will finally fix JavaScript
+TypeScript
+Flow
+ReasonML
+Elm
+WebAssembly
+Server-side rendering
+Static site generation
+Jamstack
+Serverless
+Lambda functions
+Cloud functions
+Firebase
+Supabase
+The database that's also an API
+GraphQL
+REST API
+SOAP
+XML
+JSON
+YAML
+TOML
+Configuration as code
+Infrastructure as code
+GitOps
+CI/CD pipelines
+Jenkins
+The Jenkins server nobody can access
+Bamboo
+GitHub Actions
+CircleCI
+Travis CI
+Heroku
+AWS
+Azure
+Google Cloud
+The cloud bill that bankrupts the startup
+Surprise AWS charges
+S3 buckets set to public
+EC2 instances running for 3 years
+RDS databases no one uses
+The staging environment costs more than production
+Terraform
+Ansible
+Chef
+Puppet
+Salt
+Configuration management
+Secret management
+Passwords in environment variables
+API keys committed to git
+The .env file that's in the repo
+Credentials in Slack
+SSH keys without passwords
+sudo chmod 777
+Running everything as root
+Docker containers running as root
+Kubernetes security policies
+The cluster that mines Bitcoin
+Helm charts
+Operators
+CRDs
+Service meshes
+Istio
+The abstraction that makes everything more complex
+The library that does one thing
+The library that does everything
+Left-pad
+Is-odd
+A package with one line of code
+Dependency hell
+Transitive dependencies
+The library that pulls in 50 other libraries
+Bundle size optimization
+Tree shaking
+Code splitting
+Lazy loading
+Performance optimization
+Lighthouse scores
+Web vitals
+Core Web Vitals
+SEO
+Meta tags
+Open Graph
+Semantic HTML
+Accessibility
+ARIA labels
+Screen readers
+Keyboard navigation
+Color contrast
+WCAG compliance
+The feature nobody uses
+Dark mode
+Light mode people at 3 AM
+Night shift developers
+The 10x developer who doesn't document anything
+The developer who only works at night
+The PM who schedules meetings at 9 AM
+Morning standups
+The developer in a different timezone
+Asynchronous communication
+Teams at 2 AM
+Being on-call
+PagerDuty alerts
+Getting paged at 3 AM
+The production incident on Christmas
+Working on the weekend
+Crunch time
+The death march
+Mandatory overtime
+Burnout
+Work-life balance
+The job listing requiring 10 years of experience in a 5-year-old tech
+The job that wants a senior developer for junior pay
+Recruiters who don't read your profile
+"We're like a family here"
+Unlimited PTO that nobody takes
+The ping pong table nobody uses
+Free snacks
+Beer on tap
+The office beer fridge
+The company all-hands
+Team building exercises
+Trust falls
+The company retreat
+The offsite that's just more work
+The holiday party
+Secret Santa
+The swag nobody wants
+Company t-shirts
+Stickers
+The standing desk
+The ergonomic keyboard
+Mechanical keyboards
+The developer who types too loud
+Blue switches
+The custom keyboard that costs $500
+Dual monitors
+Triple monitors
+Ultrawide monitors
+The second monitor that's vertical
+The laptop that thermal throttles
+The work laptop from 2015
+8GB of RAM
+The Windows laptop for Linux development
+WSL2
+Dual booting
+The Hackintosh
+M1 MacBook
+The debate about which OS is best
+Linux elitists
+Arch Linux users
+"I use Arch btw"
+The person who runs everything in Kubernetes locally
+The developer with 47 browser tabs open
+Chrome eating all your RAM
+Firefox
+Safari being the new IE
+Edge being Chrome with extra steps
+Browser dev tools
+Console.log debugging
+Debuggers
+Breakpoints
+Watching variables
+Step through debugging
+Print statement debugging
+Alert debugging
+The bug that only happens in production
+The bug that disappears when debugging
+Heisenbugs
+The bug that's been there for years
+Known issues
+Won't fix
+Working as intended
+The VDI is down
+Cloud Desk isn't responding
+Too many Teams calls
+Meetings during lunch
+Meetings at 4:30pm on a Friday
+The business won't listen
+I had to work during the call
+I wasn't listening to the conversation
+I've not had time to go to the toilet
+My calendar is already full of calls
+Drinking beer during calls
+Our backlog is full
+That's not our definition of done
+The acceptance criteria suck
+Microsoft Teams
+GitHub Copilot hallunications
+My prompt-fu sucks
+We've had a new MD more often than a payrise
+Breaking Changes in SDKs
+I needed a nap
+Vague requirements
+Coding in my pyjamas
+{{PLAYER}} force-merging on a Friday
+Blaming {{PLAYER}} in front of the whole standup
+{{PLAYER}} saying "it's a tiny change" right before lunch
+{{PLAYER}} hotfixing in production during lunch
+{{PLAYER}} saying "no risk" with full confidence
+{{PLAYER}} closing the ticket before testing
+{{PLAYER}} writing "works for me" as documentation
+{{PLAYER}} moving fast and skipping all context
+{{PLAYER}} saying "just deploy it"
+{{PLAYER}} adding one line that breaks everything
+{{PLAYER}} saying "I didn't touch that" while touching that
+{{PLAYER}} dropping "we can clean it up later"
+{{PLAYER}} turning a quick patch into a feature

@@ -1,10 +1,11 @@
+using System.Text.RegularExpressions;
 using TheDevBranch.Models;
 
 namespace TheDevBranch.Services;
 
 public interface IGameService
 {
-    GameRoom CreateRoom(string roomId, int? totalRounds = null, string? creatorConnectionId = null);
+    GameRoom CreateRoom(string roomId, int? totalRounds = null, string? creatorConnectionId = null, string? deckId = null, bool burnModeEnabled = false);
     GameRoom? GetRoom(string roomId);
     Player AddPlayer(string roomId, string connectionId, string playerName, bool allowRejoin = false);
     void RemovePlayer(string roomId, string connectionId);
@@ -21,6 +22,7 @@ public interface IGameService
 
 public class GameService : IGameService
 {
+    private static readonly Regex PlayerPlaceholderRegex = new(@"\{\{\s*PLAYER(?:_NAME)?\s*\}\}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private readonly Dictionary<string, GameRoom> _rooms = new();
     private readonly ICardService _cardService;
     private readonly ILogger<GameService> _logger;
@@ -46,7 +48,7 @@ public class GameService : IGameService
         return trimmed;
     }
 
-    public GameRoom CreateRoom(string roomId, int? totalRounds = null, string? creatorConnectionId = null)
+    public GameRoom CreateRoom(string roomId, int? totalRounds = null, string? creatorConnectionId = null, string? deckId = null, bool burnModeEnabled = false)
     {
         roomId = NormalizeRoomId(roomId);
         _logger.LogInformation($"[GameService.CreateRoom] Creating room: {roomId}, creatorConnectionId: {creatorConnectionId}");
@@ -57,7 +59,22 @@ public class GameService : IGameService
             return _rooms[roomId];
         }
 
-        var room = new GameRoom { RoomId = roomId, CreatorConnectionId = creatorConnectionId };
+        var normalizedDeckId = string.IsNullOrWhiteSpace(deckId) ? _cardService.GetDefaultDeckId() : deckId.Trim();
+        if (!_cardService.DeckExists(normalizedDeckId))
+        {
+            throw new InvalidOperationException($"Deck not found: {normalizedDeckId}");
+        }
+
+        var deckMetadata = _cardService.GetDeckMetadata(normalizedDeckId);
+        var room = new GameRoom
+        {
+            RoomId = roomId,
+            CreatorConnectionId = creatorConnectionId,
+            DeckId = deckMetadata.Id,
+            DeckName = deckMetadata.Name,
+            DeckTheme = deckMetadata.Theme,
+            BurnModeEnabled = burnModeEnabled
+        };
         if (totalRounds.HasValue && totalRounds.Value > 0)
         {
             room.TotalRounds = totalRounds.Value;
@@ -66,7 +83,7 @@ public class GameService : IGameService
         MarkActivity(room);
 
         _rooms[roomId] = room;
-        _logger.LogInformation($"[GameService.CreateRoom] Room {roomId} created with {room.TotalRounds} rounds");
+        _logger.LogInformation($"[GameService.CreateRoom] Room {roomId} created with {room.TotalRounds} rounds using deck {room.DeckId}");
         return room;
     }
 
@@ -191,13 +208,16 @@ public class GameService : IGameService
         room.State = GameState.Playing;
         room.CurrentCzarIndex = 0;
         room.CurrentRound = 1;
+        room.WhiteDrawPile = ShuffleWhiteCards(FilterWhiteCardsForBurnMode(room, _cardService.GetWhiteCards(room.DeckId)));
+        room.WhiteDiscardPile.Clear();
+        room.BurnModeLastNameByContext.Clear();
         
         // Deal cards to all players
         foreach (var player in room.Players)
         {
             player.Score = 0;
             player.SelectedCardIds.Clear();
-            DealCards(player, 10);
+            DealCards(room, player, 10);
         }
 
         StartRound(room);
@@ -214,8 +234,17 @@ public class GameService : IGameService
         // Assign card czar
         AssignCardCzar(room);
 
-        // Draw black card
-        room.CurrentBlackCard = _cardService.GetRandomBlackCard();
+        // Draw black card from room deck
+        var blackCards = FilterBlackCardsForBurnMode(room, _cardService.GetBlackCards(room.DeckId));
+        if (blackCards.Count == 0)
+            throw new InvalidOperationException($"No black cards available for deck {room.DeckId} with burn mode {(room.BurnModeEnabled ? "enabled" : "disabled")}");
+
+        var blackCard = blackCards[_random.Next(blackCards.Count)];
+        room.CurrentBlackCard = new BlackCard
+        {
+            Text = ReplacePlayerPlaceholders(room, blackCard.Text, contextKey: "black"),
+            PickCount = blackCard.PickCount
+        };
     }
 
     private void AssignCardCzar(GameRoom room)
@@ -233,11 +262,11 @@ public class GameService : IGameService
         }
     }
 
-    private void DealCards(Player player, int count)
+    private void DealCards(GameRoom room, Player player, int count)
     {
         for (int i = 0; i < count; i++)
         {
-            player.Hand.Add(_cardService.GetRandomWhiteCard());
+            player.Hand.Add(DrawWhiteCard(room, player));
         }
     }
 
@@ -336,11 +365,12 @@ public class GameService : IGameService
                     var card = player.Hand.FirstOrDefault(c => c.Id == selectedCardId);
                     if (card != null)
                     {
+                        room.WhiteDiscardPile.Add(card);
                         player.Hand.Remove(card);
                     }
                 }
                 // Deal replacement cards
-                DealCards(player, player.SelectedCardIds.Count);
+                DealCards(room, player, player.SelectedCardIds.Count);
                 player.SelectedCardIds.Clear();
             }
         }
@@ -428,5 +458,115 @@ public class GameService : IGameService
     {
         room.LastActivityUtc = DateTime.UtcNow;
         room.LastIdleWarningUtc = null;
+    }
+
+    private static List<WhiteCard> ShuffleWhiteCards(List<WhiteCard> cards)
+    {
+        return cards.OrderBy(_ => Random.Shared.Next()).ToList();
+    }
+
+    private WhiteCard DrawWhiteCard(GameRoom room, Player recipientPlayer)
+    {
+        if (room.WhiteDrawPile.Count == 0)
+        {
+            if (room.WhiteDiscardPile.Count == 0)
+            {
+                room.WhiteDrawPile = ShuffleWhiteCards(FilterWhiteCardsForBurnMode(room, _cardService.GetWhiteCards(room.DeckId)));
+            }
+            else
+            {
+                room.WhiteDrawPile = ShuffleWhiteCards(room.WhiteDiscardPile
+                    .Select(c => new WhiteCard { Text = c.Text })
+                    .ToList());
+                room.WhiteDiscardPile.Clear();
+            }
+        }
+
+        if (room.WhiteDrawPile.Count == 0)
+            throw new InvalidOperationException($"No white cards available for deck {room.DeckId} with burn mode {(room.BurnModeEnabled ? "enabled" : "disabled")}");
+
+        var sourceCard = room.WhiteDrawPile[^1];
+        room.WhiteDrawPile.RemoveAt(room.WhiteDrawPile.Count - 1);
+        return new WhiteCard
+        {
+            Text = ReplacePlayerPlaceholders(room, sourceCard.Text, recipientPlayer.Name, $"white:{recipientPlayer.ConnectionId}")
+        };
+    }
+
+    private string ReplacePlayerPlaceholders(GameRoom room, string text, string? excludedPlayerName = null, string? contextKey = null)
+    {
+        if (!room.BurnModeEnabled || string.IsNullOrWhiteSpace(text) || !PlayerPlaceholderRegex.IsMatch(text))
+        {
+            return text;
+        }
+
+        var candidatePlayerNames = room.Players
+            .Select(p => (p.Name ?? string.Empty).Trim())
+            .Where(name => name.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (!string.IsNullOrWhiteSpace(excludedPlayerName))
+        {
+            candidatePlayerNames = candidatePlayerNames
+                .Where(name => !string.Equals(name, excludedPlayerName.Trim(), StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        if (candidatePlayerNames.Count == 0)
+        {
+            return text;
+        }
+
+        var selectedName = SelectBurnName(room, candidatePlayerNames, contextKey);
+        return PlayerPlaceholderRegex.Replace(text, selectedName);
+    }
+
+    private string SelectBurnName(GameRoom room, List<string> candidatePlayerNames, string? contextKey)
+    {
+        if (candidatePlayerNames.Count == 1)
+        {
+            return candidatePlayerNames[0];
+        }
+
+        if (string.IsNullOrWhiteSpace(contextKey))
+        {
+            return candidatePlayerNames[_random.Next(candidatePlayerNames.Count)];
+        }
+
+        room.BurnModeLastNameByContext.TryGetValue(contextKey, out var lastName);
+        var nonRepeatingCandidates = candidatePlayerNames
+            .Where(name => !string.Equals(name, lastName, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        var pool = nonRepeatingCandidates.Count > 0 ? nonRepeatingCandidates : candidatePlayerNames;
+        var selected = pool[_random.Next(pool.Count)];
+        room.BurnModeLastNameByContext[contextKey] = selected;
+        return selected;
+    }
+
+    private static List<WhiteCard> FilterWhiteCardsForBurnMode(GameRoom room, List<WhiteCard> cards)
+    {
+        if (room.BurnModeEnabled)
+        {
+            return cards;
+        }
+
+        return cards.Where(c => !IsBurnModeCard(c.Text)).ToList();
+    }
+
+    private static List<BlackCard> FilterBlackCardsForBurnMode(GameRoom room, List<BlackCard> cards)
+    {
+        if (room.BurnModeEnabled)
+        {
+            return cards;
+        }
+
+        return cards.Where(c => !IsBurnModeCard(c.Text)).ToList();
+    }
+
+    private static bool IsBurnModeCard(string? text)
+    {
+        return !string.IsNullOrWhiteSpace(text) && PlayerPlaceholderRegex.IsMatch(text);
     }
 }

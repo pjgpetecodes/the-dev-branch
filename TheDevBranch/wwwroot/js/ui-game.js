@@ -20,7 +20,7 @@ function renderPlayers() {
         if (gameState.state === 1) {
             if (player.isCardCzar) {
                 statusIcon = '👑';
-            } else if (player.selectedCardIds && player.selectedCardIds.length > 0) {
+            } else if (countSubmittedCardIds(player.selectedCardIds) > 0) {
                 statusIcon = '✅';
             } else {
                 statusIcon = '⏳';
@@ -152,63 +152,139 @@ function updateBlackCardWithSelection() {
     blackCardEl.innerHTML = html;
 }
 
+function normalizeSubmittedCardIds(value) {
+    if (Array.isArray(value)) {
+        return value;
+    }
+
+    if (!value) {
+        return [];
+    }
+
+    if (Array.isArray(value.$values)) {
+        return value.$values;
+    }
+
+    if (typeof value === 'string') {
+        return [value];
+    }
+
+    return [];
+}
+
+function countSubmittedCardIds(value) {
+    return normalizeSubmittedCardIds(value).length;
+}
+
+function getSubmittedCardEntries() {
+    if (!gameState) {
+        return [];
+    }
+
+    const validPlayerIds = new Set((gameState.players || []).map(player => player.connectionId));
+    const submittedCards = gameState.submittedCards;
+    if (submittedCards) {
+        if (Array.isArray(submittedCards.$values)) {
+            const entries = submittedCards.$values
+                .map(entry => [entry?.key ?? entry?.Key, normalizeSubmittedCardIds(entry?.value ?? entry?.Value)])
+                .filter(([playerId]) => typeof playerId === 'string' && validPlayerIds.has(playerId));
+            if (entries.length > 0) {
+                return entries;
+            }
+        }
+
+        const entries = Object.entries(submittedCards)
+            .filter(([playerId]) => typeof playerId === 'string' && validPlayerIds.has(playerId))
+            .map(([playerId, cardIds]) => [playerId, normalizeSubmittedCardIds(cardIds)]);
+        if (entries.length > 0) {
+            return entries;
+        }
+    }
+
+    if (!Array.isArray(gameState.players)) {
+        return [];
+    }
+
+    return gameState.players
+        .filter(player => !player.isCardCzar && countSubmittedCardIds(player.selectedCardIds) > 0)
+        .map(player => [player.connectionId, normalizeSubmittedCardIds(player.selectedCardIds)]);
+}
+
 function renderSubmittedCards() {
     const section = document.getElementById('submittedCardsSection');
     const subsEl = document.getElementById('submittedCardsContainer');
     if (!subsEl) return;
     subsEl.innerHTML = '';
 
-    if (section) {
-        section.classList.remove('hidden', 'submitted-cards-collapsed', 'submitted-cards-placeholder');
-    }
-
+    let submittedEntries = getSubmittedCardEntries();
     const isPlayingPhase = gameState?.state === 1;
     const isJudgingPhase = gameState?.state >= 2;
-    const playerHasSubmitted = currentPlayer.hasSubmitted && !currentPlayer.isCardCzar;
-    const anyPlayerSubmitted = gameState?.submittedCards && Object.keys(gameState.submittedCards).length > 0;
-    
-    // Show submissions to czar, during judging/later states, or to anyone during playing phase if someone submitted
-    const shouldShowSubmissions = currentPlayer.isCardCzar || isJudgingPhase || (isPlayingPhase && anyPlayerSubmitted);
-    
-    if (!shouldShowSubmissions || !gameState?.submittedCards || Object.keys(gameState.submittedCards).length === 0) {
-        subsEl.innerHTML = '<p>No submissions yet</p>';
-        if (section && !shouldShowSubmissions) {
+    const submissionSummary = getPlayerSubmissionCount();
+    const anyPlayerSubmitted = isPlayingPhase
+        ? submissionSummary.submitted > 0
+        : (submittedEntries.length > 0 || submissionSummary.submitted > 0);
+
+    const shouldShowSubmissions = isJudgingPhase || (isPlayingPhase && anyPlayerSubmitted);
+
+    if (!shouldShowSubmissions || !anyPlayerSubmitted) {
+        if (section) {
             section.classList.add('hidden');
         }
         return;
     }
 
+    if (section) {
+        section.classList.remove('hidden', 'submitted-cards-collapsed', 'submitted-cards-placeholder');
+    }
+
+    // Some client states can indicate submissions via player flags before submittedCards payload arrives.
+    // In that case, synthesize placeholder-only entries so Czar/non-submitters still see anonymous cards.
+    if (submittedEntries.length === 0 && isPlayingPhase && submissionSummary.submitted > 0) {
+        const pickCount = gameState?.currentBlackCard?.pickCount ?? gameState?.currentBlackCard?.pick ?? 1;
+        const submittedPlayers = (gameState.players || [])
+            .filter(p => !p.isCardCzar && countSubmittedCardIds(p.selectedCardIds) > 0);
+        submittedEntries = submittedPlayers.map(p => [p.connectionId, new Array(pickCount).fill('__placeholder__')]);
+    }
+
     const submittedTitle = document.getElementById('submittedCardsTitle');
     if (submittedTitle) {
-        submittedTitle.textContent = currentPlayer.isCardCzar ? 'Select the Winner:' : 'Submitted Cards:';
+        submittedTitle.textContent = currentPlayer.isCardCzar && isJudgingPhase ? 'Select the Winner:' : 'Submitted Cards:';
+    }
+
+    if (isPlayingPhase) {
+        const pickCount = gameState?.currentBlackCard?.pickCount ?? gameState?.currentBlackCard?.pick ?? 1;
+        const placeholderEntries = submittedEntries.length > 0
+            ? submittedEntries
+            : Array.from({ length: submissionSummary.submitted }, (_, index) => [`submitted-${index}`, new Array(pickCount).fill('__placeholder__')]);
+
+        const cardsToRender = placeholderEntries.slice(0, submissionSummary.submitted);
+
+        cardsToRender.forEach(([, cardIds], index) => {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'submitted-card-group';
+            groupDiv.dataset.submissionIndex = String(index);
+
+            const count = Math.max(1, countSubmittedCardIds(cardIds) || pickCount);
+            for (let i = 0; i < count; i++) {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card white-card placeholder-card';
+                cardDiv.textContent = '?';
+                cardDiv.style.opacity = '0.6';
+                cardDiv.style.backgroundColor = '#999';
+                groupDiv.appendChild(cardDiv);
+            }
+
+            subsEl.appendChild(groupDiv);
+        });
+
+        return;
     }
 
     const groupsData = [];
-    const playersWhoSubmitted = new Set(Object.keys(gameState.submittedCards));
-    
-    // First, add current player's own cards if they have submitted and are not the czar
-    if (currentPlayer.hasSubmitted && !currentPlayer.isCardCzar && (isPlayingPhase || isJudgingPhase)) {
-        if (currentPlayer.selectedCards && currentPlayer.selectedCards.length > 0) {
-            groupsData.push({ 
-                playerId: currentConnectionId, 
-                cards: currentPlayer.selectedCards, 
-                isPlaceholder: false,
-                isCurrentPlayerCard: true
-            });
-        }
-    }
-    
-    // Then add other players' cards from the submittedCards dict
-    Object.entries(gameState.submittedCards).forEach(([playerId, cardIds]) => {
-        // Skip if this is the current player (already added above)
-        if (playerId === currentConnectionId) {
-            return;
-        }
-        
+
+    submittedEntries.forEach(([playerId, cardIds]) => {
         const player = gameState.players.find(p => p.connectionId === playerId);
-        const isCurrentPlayer = playerId === currentConnectionId;
-        const revealCards = isJudgingPhase || currentPlayer.isCardCzar || (isPlayingPhase && isCurrentPlayer);
-        
+        const revealCards = isJudgingPhase;
         const cards = [];
 
         if (revealCards && Array.isArray(cardIds)) {
@@ -220,11 +296,8 @@ function renderSubmittedCards() {
             });
         }
         
-        if (revealCards && cards.length > 0) {
+        if (cards.length > 0) {
             groupsData.push({ playerId, cards, isPlaceholder: false });
-        } else if (isPlayingPhase && !isCurrentPlayer) {
-            // Show placeholder for other players who submitted during playing phase
-            groupsData.push({ playerId, cards: [], isPlaceholder: true, cardCount: Array.isArray(cardIds) ? cardIds.length : 1 });
         }
     });
     
@@ -354,7 +427,7 @@ function updateGameStateUI() {
                 renderSubmittedCards(); // Show submitted cards while waiting for others
             } else {
                 // Show submissions from other players even if current player hasn't submitted
-                const hasAnySubmissions = gameState.submittedCards && Object.keys(gameState.submittedCards).length > 0;
+                const hasAnySubmissions = getSubmittedCardEntries().length > 0 || getPlayerSubmissionCount().submitted > 0;
                 if (hasAnySubmissions) {
                     renderSubmittedCards(); // Show other players' placeholder cards
                 }
@@ -454,8 +527,8 @@ function updateSubmittedCardsPresentation() {
     const section = document.getElementById('submittedCardsSection');
     if (!cardsWrapper || !section || !gameState) return;
 
-    const hasSubmissions = gameState.submittedCards && Object.keys(gameState.submittedCards).length > 0;
-    const shouldShowCards = gameState.state === 1 && !currentPlayer.isCardCzar && hasSubmissions;
+    const hasSubmissions = getSubmittedCardEntries().length > 0 || getPlayerSubmissionCount().submitted > 0;
+    const shouldShowCards = gameState.state === 1 && hasSubmissions;
     const isJudgingOrLater = gameState.state >= 2;
 
     if (shouldShowCards) {

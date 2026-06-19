@@ -64,6 +64,18 @@
                 
                 <!-- Create Room Tab -->
                 <div id="createTab" class="tab-content active">
+                    <div class="input-group deck-select-group">
+                        <label for="deckSelect">Select Deck Theme:</label>
+                        <select id="deckSelect">
+                            <option value="">Loading decks...</option>
+                        </select>
+                    </div>
+                    <div class="input-group burn-mode-group">
+                        <label class="burn-mode-label" for="burnModeToggle">
+                            <input type="checkbox" id="burnModeToggle" />
+                            <span>🔥 Burn Mode (random player names in placeholder cards)</span>
+                        </label>
+                    </div>
                     <button id="createRoomBtn" class="btn-primary btn-large" onclick="createRoom()">Create Room</button>
                 </div>
                 

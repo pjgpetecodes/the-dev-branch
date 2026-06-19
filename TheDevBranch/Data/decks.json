@@ -1,0 +1,16 @@
+[
+  {
+    "id": "default",
+    "name": "Default Dev Deck",
+    "description": "The original all-purpose developer deck.",
+    "theme": "General Dev",
+    "isDefault": true
+  },
+  {
+    "id": "agile-team",
+    "name": "Agile Team Deck",
+    "description": "Developer-team humor focused on agile ceremonies, planning, backlog life, and delivery pressure.",
+    "theme": "Agile & Delivery",
+    "isDefault": false
+  }
+]

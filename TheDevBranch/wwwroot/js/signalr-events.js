@@ -110,6 +110,20 @@ function initializeSignalREvents() {
             showRoundsSelector();
         }
 
+        if (state.deckId) {
+            selectedDeckId = state.deckId;
+            const deckSelect = document.getElementById('deckSelect');
+            if (deckSelect) {
+                deckSelect.value = selectedDeckId;
+            }
+        }
+
+        burnModeEnabled = !!state.burnModeEnabled;
+        const burnModeToggle = document.getElementById('burnModeToggle');
+        if (burnModeToggle) {
+            burnModeToggle.checked = burnModeEnabled;
+        }
+
         updateRoundDisplay();
         updateWelcomeHeader();
         

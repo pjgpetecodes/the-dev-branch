@@ -18,7 +18,7 @@ public class GameHub : Hub
         _logger = logger;
     }
 
-    public async Task CreateRoom(string playerName)
+    public async Task CreateRoom(string playerName, string? deckId = null, bool burnModeEnabled = false)
     {
         _logger.LogInformation($"[CreateRoom] *** METHOD ENTRY *** PlayerName: {playerName}");
         try
@@ -41,7 +41,7 @@ public class GameHub : Hub
             roomId = NormalizeRoomId(roomId);
             _logger.LogInformation($"[CreateRoom] Normalized room ID: {roomId}");
             
-            var room = _gameService.CreateRoom(roomId, creatorConnectionId: Context.ConnectionId);
+            var room = _gameService.CreateRoom(roomId, creatorConnectionId: Context.ConnectionId, deckId: deckId, burnModeEnabled: burnModeEnabled);
             _logger.LogInformation($"[CreateRoom] Room created in service with creator: {Context.ConnectionId}");
             
             // Add the creator as the first player in the room
@@ -69,6 +69,11 @@ public class GameHub : Hub
             _logger.LogError(ex, $"[CreateRoom] Stack trace: {ex.StackTrace}");
             await Clients.Caller.SendAsync("Error", ex.Message);
         }
+    }
+
+    public Task<IEnumerable<DeckMetadata>> GetAvailableDecks()
+    {
+        return Task.FromResult(_cardService.GetAvailableDecks().AsEnumerable());
     }
 
     public async Task UpdateRounds(string roomId, int totalRounds)
@@ -118,7 +123,7 @@ public class GameHub : Hub
                 string demoRoomId = GenerateRoomId();
                 demoRoomId = NormalizeRoomId(demoRoomId);
                 
-                var demoRoom = _gameService.CreateRoom(demoRoomId, creatorConnectionId: Context.ConnectionId);
+                var demoRoom = _gameService.CreateRoom(demoRoomId, creatorConnectionId: Context.ConnectionId, deckId: _cardService.GetDefaultDeckId());
                 // Demo room creator connection ID set during creation
                 
                 // Add the main player
@@ -141,7 +146,7 @@ public class GameHub : Hub
             var room = _gameService.GetRoom(roomId);
             if (room == null)
             {
-                _gameService.CreateRoom(roomId);
+                _gameService.CreateRoom(roomId, deckId: _cardService.GetDefaultDeckId());
                 room = _gameService.GetRoom(roomId);
             }
 
@@ -794,7 +799,7 @@ public class GameHub : Hub
                 throw new InvalidOperationException("Sender not found");
 
             // Get a random takedown from the card service
-            var takedownMessage = _cardService.GetRandomTakedown();
+            var takedownMessage = _cardService.GetRandomTakedown(room.DeckId);
 
             // Send the takedown only to the target player
             await Clients.Client(targetPlayerId).SendAsync("ReceiveTakedown", senderPlayer.Name, takedownMessage);
@@ -871,5 +876,3 @@ public class GameHub : Hub
         }
     }
 }
-
-

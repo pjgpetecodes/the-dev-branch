@@ -56,9 +56,31 @@ function validateRoomId(roomCode) {
 
 function getPlayerSubmissionCount() {
     if (!gameState) return { total: 0, submitted: 0, remaining: 0 };
+
+    const normalizeIds = (value) => {
+        if (Array.isArray(value)) {
+            return value;
+        }
+
+        if (!value) {
+            return [];
+        }
+
+        if (Array.isArray(value.$values)) {
+            return value.$values;
+        }
+
+        if (typeof value === 'string') {
+            return [value];
+        }
+
+        return [];
+    };
     
     const totalPlayers = gameState.players.length - 1;
-    const submittedPlayers = gameState.players.filter(p => !p.isCardCzar && p.selectedCardIds && p.selectedCardIds.length > 0).length;
+    const submittedPlayers = gameState.players
+        .filter(p => !p.isCardCzar && normalizeIds(p.selectedCardIds).length > 0)
+        .length;
     
     return {
         total: totalPlayers,

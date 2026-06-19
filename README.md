@@ -6,6 +6,7 @@ An online multiplayer card game inspired by Cards Against Humanity, but tailored
 
 - **Real-time Multiplayer**: Built with SignalR for instant communication between players
 - **Developer-Themed Cards**: Hundreds of cards with jokes, references, and situations familiar to developers
+- **Multiple Deck Themes**: Choose a themed deck when creating a room (Default Dev Deck, Agile Team Deck)
 - **Graphical Interface**: Modern, responsive UI with card animations and visual feedback
 - **Scalable Architecture**: Runs on Azure App Service, ready for multiple concurrent games
 - **Azure Deployment**: Infrastructure as Code with Bicep templates
@@ -204,6 +205,13 @@ You can customize the game by editing the card files:
 - `TheDevBranch/Data/white-cards.txt`: Answer cards (one per line)
 - `TheDevBranch/Data/takedowns.txt`: Snarky takedown messages (one per line)
 
+Deck packs are stored under `TheDevBranch/Data/decks/` with metadata in `TheDevBranch/Data/decks.json`.
+
+### Burn Mode Placeholder
+
+If room creator enables **Burn Mode** when creating a room, card text placeholder `{{PLAYER}}` (or `{{PLAYER_NAME}}`) is replaced with random current player names at deal/draw time.
+Cards containing these placeholders are treated as **burn-only cards** and are excluded entirely when Burn Mode is off.
+
 The game automatically loads these files on startup.
 
 ## 🔧 Configuration
@@ -241,4 +249,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Inspired by Cards Against Humanity
 - Built with love for the developer community
-

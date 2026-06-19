@@ -164,6 +164,12 @@ function updateWelcomeHeader() {
         
         let html = `<div class="welcome-line-1">Welcome <strong>${playerNameToShow}</strong> to Room <strong>${currentRoomId}</strong></div>`;
         html += `<div class="welcome-line-2">Players in room: <strong>${playerCount}</strong>`;
+        if (gameState?.deckName) {
+            html += ` | Deck: <strong>${gameState.deckName}</strong>`;
+        }
+        if (gameState?.burnModeEnabled) {
+            html += ` | <strong>🔥 Burn Mode</strong>`;
+        }
         
         if (gameState && gameState.state === 0) {
             html += ` | <strong>${totalRounds}</strong> rounds`;

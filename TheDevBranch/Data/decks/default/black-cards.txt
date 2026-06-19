@@ -1,0 +1,50 @@
+I'm not saying it was _____, but it was _____.
+When the code review came back, everyone just stared at _____.
+Our new framework will finally solve the problem of _____.
+The real reason we're behind schedule? _____.
+What killed the dinosaurs? _____. What killed our servers? _____.
+I would have fixed the bug, but then I discovered _____.
+Stack Overflow is great, but nothing beats _____ for solving _____.
+The intern was never the same after _____.
+During the sprint retrospective, we agreed to stop _____.
+My commit message? Simply: _____.
+This week's production incident was caused by _____.
+We don't need unit tests. We have _____.
+The senior dev said we should use _____ because of _____.
+I learned to code from _____.
+Our tech debt is so bad, we now have _____.
+The best thing about working from home? _____.
+After the merge conflict, all that remained was _____.
+Our API documentation consists of _____.
+The client wants us to add _____ by tomorrow.
+What really happens during "standup"? _____.
+Our legacy code is held together by _____.
+I got promoted after I implemented _____.
+The hardest part of programming isn't the code, it's _____.
+My IDE crashed while working on _____.
+We had to revert the deployment because of _____.
+Code that works on my machine but not in production: _____
+The CTO's secret to success? _____.
+What do developers dream about? _____.
+Our microservices architecture is just _____ with extra steps.
+You know you're a senior developer when you can fix _____ with _____.
+I turned off my camera during the meeting, because of _____.
+The reason the standup lasted two hours was _____.
+My biggest regret about today was _____ happening at 4:30pm on a Friday.
+I would be more productive if it wasn't for _____.
+The worst part of being in too many Teams calls is _____.
+This could have been _____ instead of _____ .
+I blame _____ for my complete lack of focus today.
+My excuse for not paying attention in the meeting was _____.
+I accomplished nothing today because _____.
+I turned off my notifications when _____.
+The reason user story didn't get moved to closed was _____.
+It take 9 months to release new features when _____.
+The moment {{PLAYER}} said "watch this" was followed by _____.
+The postmortem started when {{PLAYER}} discovered _____.
+The deploy looked safe until {{PLAYER}} added _____.
+{{PLAYER}} said "I tested it locally," which meant _____.
+Everyone trusted {{PLAYER}}, then _____ happened.
+When {{PLAYER}} approved the PR, we got _____.
+The sentence "It's fine, {{PLAYER}} reviewed it" resulted in _____.
+{{PLAYER}} fixed one bug by introducing _____.
