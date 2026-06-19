@@ -13,20 +13,13 @@
 
 
   <ItemGroup>
-    <Content Update="Data\decks.json">
+    <None Update="Data/**/*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Update="Data\decks\**\*">
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
+    <Content Update="Data/**/*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Update="Data\black-cards.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Update="Data\white-cards.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Update="Data\takedowns.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
 </Project>
