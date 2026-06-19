@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace TheDevBranch.Models;
 
 public class GameRoom
@@ -20,6 +22,19 @@ public class GameRoom
     public HashSet<string> RemovedPlayerConnectionIds { get; set; } = new(); // Players who left mid-game and cannot rejoin
     public string? PlayerWhoLeftName { get; set; } // Name of current player who left mid-game (for waiting state)
     public bool IsWaitingForPlayerReturn { get; set; } = false; // Whether room is locked waiting for specific player
+    public string DeckId { get; set; } = "default";
+    public string DeckName { get; set; } = "Default Dev Deck";
+    public string DeckTheme { get; set; } = "General";
+    public bool BurnModeEnabled { get; set; } = false;
+
+    [JsonIgnore]
+    public List<WhiteCard> WhiteDrawPile { get; set; } = new();
+
+    [JsonIgnore]
+    public List<WhiteCard> WhiteDiscardPile { get; set; } = new();
+
+    [JsonIgnore]
+    public Dictionary<string, string> BurnModeLastNameByContext { get; set; } = new();
 }
 
 public enum GameState

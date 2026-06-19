@@ -1,0 +1,84 @@
+The sprint went off track because of _____.
+During standup, everyone pretended _____ wasn't a blocker.
+The retrospective action item we ignored was _____.
+Our backlog grooming session accidentally created _____.
+The real reason this story rolled over was _____.
+The Product Owner's surprise priority was _____.
+What derailed the Teams call today? _____.
+The acceptance criteria forgot to mention _____.
+Our release plan depends entirely on _____.
+The project timeline changed after _____.
+The meeting could have been an email about _____.
+The update in the status report avoided mentioning _____.
+Our biggest delivery risk this quarter is _____.
+The team agreed to "keep it simple" and then added _____.
+The board says "In Progress" because of _____.
+The one thing missing from the handover was _____.
+The sprint goal changed halfway through because of _____.
+The roadmap slide looked confident thanks to _____.
+The stakeholder asked for "just one more thing": _____.
+The reason we need another alignment meeting is _____.
+The decision was delayed until after _____.
+The blocker owner is waiting on _____.
+The workshop ended with a clear next step: _____.
+The priority matrix classified everything as _____.
+What caused the release delay this time? _____.
+The risk register warned us about _____.
+The kickoff felt productive until _____.
+Our process now requires _____ before we can continue.
+The handoff failed because nobody documented _____.
+The estimate was based on _____.
+The board cleanup revealed a hidden pile of _____.
+The team velocity dropped after _____.
+The demo almost worked until _____.
+We discovered too late that the requirement was _____.
+The phrase "quick fix" actually meant _____.
+The sponsor wanted confidence, so we showed _____.
+The root cause analysis blamed _____.
+The initiative started with ambition and ended with _____.
+The objective looked achievable until _____.
+The team celebrated early because of _____.
+The scope expanded when someone mentioned _____.
+The release checklist forgot _____.
+The project acronym secretly means _____.
+Our weekly update is 80% _____.
+The unresolved dependency is currently _____.
+The board card comments escalated into _____.
+The follow-up owner was set to _____.
+The launch date moved because of _____.
+The safest answer in planning poker is _____.
+The one thing everyone nodded at but nobody understood was _____.
+The confidence level is "amber" because of _____.
+During backlog refinement we discovered _____.
+In today's retrospective we finally admitted _____.
+Our Azure DevOps board says the blocker is _____.
+The phrase "it's basically done" was based on _____.
+Our fastest way to delay this project is _____.
+The thing that turned a 15-minute sync into an hour was _____.
+The sprint looked healthy until someone mentioned _____.
+The hidden requirement was buried inside _____.
+The reason everyone looked stressed in planning was _____.
+The confidence update went from green to amber after _____.
+The business asked for agility, so we delivered _____.
+The action item no one wanted was _____.
+The polite way to say "we're stuck" is _____.
+The MVP gained three new must-haves after _____.
+The hand wave in that roadmap meeting was covering _____.
+The phrase "we're aligned" really meant _____.
+Today's "small tweak" became _____.
+The true owner of this dependency is _____.
+The steering group believes {{PLAYER}} can fix this with _____.
+By the end of the call, {{PLAYER}} volunteered for _____.
+The official reason {{PLAYER}} missed the deadline was _____.
+The sprint was "on track" until {{PLAYER}} introduced _____.
+The sentence from {{PLAYER}} that changed everything was "_____."
+The risk nobody questioned because {{PLAYER}} sounded confident was _____.
+{{PLAYER}} said "trust me," then immediately revealed _____.
+The workshop got derailed when {{PLAYER}} presented _____.
+The status update from {{PLAYER}} translated to _____.
+Leadership heard {{PLAYER}} say "quick win" and approved _____.
+{{PLAYER}} escalated this issue by adding _____.
+What {{PLAYER}} called "minor scope" was actually _____.
+The spreadsheet from {{PLAYER}} accidentally exposed _____.
+The plan was clear until {{PLAYER}} added _____.
+The reason everyone muted themselves after {{PLAYER}} spoke was _____.

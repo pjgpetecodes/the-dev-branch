@@ -15,6 +15,7 @@ async function initializeConnection() {
         await connection.start();
         console.log("SignalR Connected");
         currentConnectionId = connection.connectionId;
+        await loadAvailableDecks();
     } catch (err) {
         console.error("SignalR Connection Error:", err);
         showError("Failed to connect to game server. Please refresh the page.");
@@ -36,9 +37,13 @@ async function createRoom() {
         return false;
     }
 
+    const deckId = getSelectedDeckId();
+    const burnModeToggle = document.getElementById('burnModeToggle');
+    const burnMode = !!burnModeToggle?.checked;
+
     try {
-        console.log("[createRoom] Invoking CreateRoom with playerName:", playerName);
-        await connection.invoke("CreateRoom", playerName);
+        console.log("[createRoom] Invoking CreateRoom with playerName:", playerName, "deckId:", deckId, "burnMode:", burnMode);
+        await connection.invoke("CreateRoom", playerName, deckId, burnMode);
         console.log("[createRoom] CreateRoom invoke succeeded");
         
         currentPlayerName = playerName;
@@ -52,6 +57,65 @@ async function createRoom() {
         showError(errorMessage);
         return false;
     }
+}
+
+async function loadAvailableDecks() {
+    try {
+        availableDecks = await connection.invoke("GetAvailableDecks");
+        populateDeckSelect();
+    } catch (err) {
+        console.error("Failed to load decks:", err);
+        availableDecks = [];
+        populateDeckSelect();
+    }
+}
+
+function populateDeckSelect() {
+    const deckSelect = document.getElementById('deckSelect');
+    if (!deckSelect) {
+        return;
+    }
+
+    const decks = Array.isArray(availableDecks) ? availableDecks : [];
+    if (decks.length === 0) {
+        deckSelect.innerHTML = '<option value="default">Default Dev Deck</option>';
+        selectedDeckId = 'default';
+        deckSelect.value = selectedDeckId;
+        return;
+    }
+
+    deckSelect.innerHTML = '';
+    decks.forEach(deck => {
+        const option = document.createElement('option');
+        option.value = deck.id;
+        option.textContent = `${deck.name}${deck.theme ? ` — ${deck.theme}` : ''}`;
+        if (deck.description) {
+            option.title = deck.description;
+        }
+        deckSelect.appendChild(option);
+    });
+
+    const defaultDeck = decks.find(d => d.isDefault) || decks[0];
+    selectedDeckId = defaultDeck.id;
+    deckSelect.value = selectedDeckId;
+    deckSelect.onchange = () => {
+        selectedDeckId = deckSelect.value;
+    };
+}
+
+function getSelectedDeckId() {
+    const deckSelect = document.getElementById('deckSelect');
+    if (deckSelect && deckSelect.value) {
+        selectedDeckId = deckSelect.value;
+        return selectedDeckId;
+    }
+
+    if (selectedDeckId) {
+        return selectedDeckId;
+    }
+
+    const defaultDeck = Array.isArray(availableDecks) ? availableDecks.find(d => d.isDefault) : null;
+    return defaultDeck?.id || 'default';
 }
 
 async function joinRoom(roomCodeParam = null) {
@@ -129,10 +193,13 @@ async function leaveRoom() {
     roundNumber = 1;
     totalRounds = 7;
     hasPromptedRounds = false;
+    burnModeEnabled = false;
     updateRoundDisplay();
     
     document.getElementById('roundsSelector').classList.add('hidden');
     document.getElementById('shareLinkSection').classList.add('hidden');
+    const burnModeToggle = document.getElementById('burnModeToggle');
+    if (burnModeToggle) burnModeToggle.checked = false;
     closeRoundsModal();
     
     if (!joinedViaLink) {

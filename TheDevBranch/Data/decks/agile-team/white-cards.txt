@@ -1,0 +1,178 @@
+Daily standups that become status theater
+A sprint goal everyone forgot by Wednesday
+A backlog item marked urgent for the fifth week
+Scope creep in business casual
+A user story with no acceptance criteria
+A retrospective where nobody says the real problem
+A blocker waiting on one stakeholder reply
+A Teams call that should have been a comment
+A meeting about reducing meetings
+An action item with no owner
+A dependency no one mentioned in planning
+A "quick update" that takes 45 minutes
+A demo that fails exactly once
+A sprint review with zero cameras on
+An estimate based entirely on hope
+A ticket titled "Misc improvements"
+A requirement changed after sign-off
+A project board full of "In Progress"
+Work in progress from three sprints ago
+A handover with one sentence of context
+A follow-up meeting to schedule another meeting
+A risk register nobody opens
+A planning poker round with one mystery voter
+A "small change" with seven approvals
+A release note that says "various fixes"
+A stakeholder who joins at minute 29
+A roadmap slide with no dates
+A sprint burndown chart with straight lines
+A timeline updated after every meeting
+A surprise priority from leadership
+A "must-have" request on Friday at 4:55 PM
+A requirement hidden in a chat thread
+An epic with twenty unrelated stories
+An MVP with enterprise expectations
+A delivery date picked before discovery
+A process update with a catchy name
+A board column called "Almost Done"
+A status report that says "Amber"
+A test plan written after release
+A handoff document nobody can find
+A sprint objective rewritten mid-sprint
+A blocked ticket waiting on "clarification"
+A calendar invite with 18 people
+A feature request with no business outcome
+A post-it wall translated into three spreadsheets
+A workshop that produced zero decisions
+A decision parked for next quarter
+A "quick win" that takes two sprints
+A definition of done no one follows
+A confidence vote of "it depends"
+A release checklist from 2019
+A lessons-learned doc no one read
+A ticket that keeps changing owner
+A dependency on a team that reorganized
+A budget constraint discovered too late
+A user journey with one missing step
+A process exception for one special case
+A policy update that changes everything
+A timeline measured in "soon"
+A channel full of unread updates
+A Friday afternoon "can we just"
+A kickoff with no clear success metric
+A quarterly objective that conflicts with this sprint
+A team agreement nobody remembers
+A "final" version_v7_final_final
+An approval chain with six handoffs
+A planning deck with thirty animations
+A KPI that rewards the wrong behavior
+A risk accepted by silence
+A story split into five stories
+A stakeholder map with one giant question mark
+A requirement captured from memory
+A temporary workaround that became policy
+A cross-team dependency bingo card
+A deadline that ignores holidays
+A standup where everyone says "no blockers"
+A mid-sprint pivot
+A project acronym nobody can decode
+A release date moved to "TBD"
+A daily sync plus a weekly sync plus a recap sync
+A "just for now" process change
+A board cleanup task that became a project
+A priority matrix with all items marked high
+A change request with no change details
+A strategy slide full of arrows
+A retrospective action item with no due date
+A risk noted as "monitoring"
+A handoff during annual leave
+A team objective rewritten by committee
+A blocker escalated to another blocker
+A dependencies section that says "none"
+A team celebration scheduled before completion
+A single point of failure named {{PLAYER}}
+A sprint plan created in a panic
+A process owner who changed roles yesterday
+A decision log with one entry
+A feature toggle for emotional support
+A "simple workflow" with nine steps
+A roadmap built around assumptions
+An initiative that means different things to everyone
+A status update that creates more questions
+A requirement that starts with "Just"
+A "customer need" from one loud email
+A delivery confidence score of "yellow-ish"
+A board card with 47 comments
+A ticket reopened after the release announcement
+An estimate adjusted after leadership review
+A discovery phase with no users interviewed
+A sprint overflow moved to next sprint
+A governance checkpoint on launch day
+A root cause listed as "communication"
+A follow-up owner listed as "TBD"
+A user story with three "or" conditions
+A sprint capacity plan ignoring vacations
+An initiative started to fix another initiative
+A date-driven plan with scope-driven reality
+An "all hands" invite during focus time
+A process map no one can explain
+A release party canceled by one blocker
+A demo script with one risky click
+A ticket linked to twelve other tickets
+A confidence update that says "watch this space"
+An alignment meeting that needs alignment first
+A team norm broken for a "special case"
+A handoff delayed by one missing approval
+A business case based on vibes
+An assumption logged as fact
+A queue that keeps growing
+A response of "Let's take this offline"
+A "small clarification" that resets the plan
+An unresolved dependency in bold red text
+A retro where everyone says "all good"
+An objective rewritten to match current progress
+A timeline slide with no timeline
+A sprint board screenshot in the status email
+A standup update that started with "quickly"
+The sentence "Can I steal you for five minutes?"
+A parking lot so full it needs traffic control
+An emoji reaction used as formal approval
+A Jira ticket older than the intern
+A status update that used three weather metaphors
+A decision made by whoever stayed on the call longest
+A "just this once" exception from last year
+The phrase "low effort, high impact"
+An action item that points to another action item
+A sprint that ends with "great learning"
+The same blocker wearing a different name tag
+A timeline held together by optimism and coffee
+A retrospective where the snacks carried the energy
+The magical phrase "let's be pragmatic"
+An "urgent" request that could have waited a week
+A confidence score powered by guesswork
+The stakeholder's favorite sentence: "While we're here..."
+A release train running on vibes
+A dashboard everyone trusts and nobody understands
+A rumor that {{PLAYER}} already solved this
+An action item accidentally assigned to {{PLAYER}}
+{{PLAYER}} saying "we're nearly there" for the third sprint in a row
+{{PLAYER}} opening with "I have one quick thought"
+{{PLAYER}} dropping a blocker with two minutes left in standup
+{{PLAYER}} replying "looks good to me" without context
+{{PLAYER}} promising a "tiny update" that rewrites the whole plan
+{{PLAYER}} creating a follow-up meeting for this follow-up meeting
+{{PLAYER}} volunteering everyone else
+{{PLAYER}} adding "just one more acceptance criterion"
+{{PLAYER}} sharing a screenshot instead of a summary
+{{PLAYER}} saying "it's not blocked, it's waiting"
+{{PLAYER}} moving the same ticket back to "In Progress"
+{{PLAYER}} writing "done" in the comments and disappearing
+{{PLAYER}} joining late and asking to start over
+{{PLAYER}} saying "Can we align on alignment?"
+{{PLAYER}} introducing a new process with a memorable acronym
+{{PLAYER}} renaming the same initiative for the fourth time
+{{PLAYER}} adding a red flag and calling it "healthy tension"
+{{PLAYER}} putting "TBD" where the date should be
+{{PLAYER}} scheduling a workshop to discuss scheduling workshops
+{{PLAYER}} saying "we'll absorb it in this sprint"
+{{PLAYER}} turning one dependency into a family tree

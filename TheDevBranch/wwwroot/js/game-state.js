@@ -19,6 +19,9 @@ let hasPromptedRounds = false;
 let currentPlayerName = '';
 let joinedViaLink = false;
 let idleWarningTimer = null;
+let availableDecks = [];
+let selectedDeckId = '';
+let burnModeEnabled = false;
 
 // Constants
 const MIN_PLAYERS_TO_START = 3;
