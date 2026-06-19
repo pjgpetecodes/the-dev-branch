@@ -78,3 +78,20 @@ These issues are specific to local development environments. When deployed to Az
 - CDN access is typically available
 - WebSockets are enabled by default in App Service
 - All features work as expected
+
+## Playwright E2E Tests
+
+Run the automated browser suite from the `e2e/` folder:
+
+```bash
+cd e2e
+npm install
+npx playwright install
+npm test
+```
+
+The Playwright config starts the app automatically with:
+
+```bash
+dotnet run --project TheDevBranch/TheDevBranch.csproj --urls http://127.0.0.1:5137
+```

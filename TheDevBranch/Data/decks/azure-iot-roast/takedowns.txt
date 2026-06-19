@@ -1,0 +1,36 @@
+Your IoT architecture has big "works in the lab" energy.
+That's not edge computing, that's edge gambling.
+You built a multi-cloud strategy and somehow doubled the outages.
+Impressive plan: all telemetry, zero trust, and negative sleep.
+That dashboard is pretty, but the devices are still offline.
+You call it resilience; I call it scheduled panic.
+Great migration story. Shame the data didn't migrate.
+You spent six weeks tuning alerts and ignored the root cause.
+Your retry policy is just denial in YAML form.
+I've seen stronger security in a shared spreadsheet.
+That incident timeline reads like improv theater.
+Your runbook has one step: "hope."
+The only thing real-time here is the blame assignment.
+Congrats on cloud neutrality. Every cloud is equally upset.
+AWS didn't fail you; your permissions model did.
+Google IoT disappeared and your plan did too.
+You reinvented pub/sub with more meetings.
+That "single pane of glass" has six different logins.
+Your edge rollout strategy is basically roulette.
+Bold move shipping firmware from a coffee shop.
+You built observability but forgot observance.
+Your device identity model is vibes and MAC addresses.
+That cost optimization turned into feature austerity.
+You're not vendor-locked, you're vendor-spiraling.
+The architecture diagram is detailed, unlike your rollback plan.
+You didn't choose Azure IoT for reliability; you chose it for fewer surprises.
+Your cloud bill is now a character in the incident channel.
+That was less "internet of things" and more "internet of pings."
+The packet loss chart looks like your sprint commitment.
+Your postmortem action items have entered archival storage.
+When {{PLAYER}} says "tiny change," I open a bridge call.
+{{PLAYER}} just turned one incident into a trilogy.
+If {{PLAYER}} says "quick fix," save logs first.
+{{PLAYER}} claims this is temporary, like all permanent outages.
+That's an AWS best practice interpreted with malicious creativity.
+That's a Google migration path straight into a dead end.

@@ -109,6 +109,24 @@ The demo panel allows you to:
 - **Feature Validation**: Verify new card types, game rules, and UI changes
 - **Performance Testing**: Load test with multiple players on one machine
 
+### End-to-End Testing with Playwright
+
+The repository includes a Playwright E2E suite under `e2e/` that covers lobby validation, room join flows, and full round gameplay in demo mode.
+
+```bash
+cd e2e
+npm install
+npx playwright install
+npm test
+```
+
+Useful variants:
+
+```bash
+npm run test:headed
+npm run test:ui
+```
+
 
 
 **Have an Azure subscription?** → Start here: **[What you need to deploy](AZURE-DEPLOY-SUMMARY.md)**
