@@ -73,6 +73,7 @@ public class MediaCaptureGalleryItem
     public int RoundNumber { get; set; }
     public MediaCaptureMoment Moment { get; set; }
     public string CapturedByConnectionId { get; set; } = string.Empty;
+    public string CapturedByPlayerName { get; set; } = string.Empty;
     public DateTime CapturedAtUtc { get; set; } = DateTime.UtcNow;
     public string MimeType { get; set; } = string.Empty;
     public int DurationMs { get; set; }

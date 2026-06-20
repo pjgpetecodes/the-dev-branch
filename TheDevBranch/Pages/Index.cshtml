@@ -13,7 +13,7 @@
     <title>The Dev Branch</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body>
+<body class="@(!string.IsNullOrWhiteSpace(Request.Query["room"]) ? "join-link-entry-pending" : string.Empty)">
     <!-- Game Header -->
     <header id="gameHeader" class="game-header">
         <a href="/" class="game-title">💻 The Dev Branch 💻</a>
@@ -25,6 +25,7 @@
 
     <!-- Notification Area -->
     <div id="notificationArea" class="notification-area"></div>
+    <div id="momentsSpotlightLayer" class="moments-spotlight-layer" aria-hidden="true"></div>
 
     <!-- Small Game Logo (shown during gameplay) -->
     <div id="gameLogo" class="game-logo hidden">
@@ -141,6 +142,7 @@
                     </div>
                     <div class="modal-actions">
                         <button id="confirmNameBtn" class="btn-primary" onclick="confirmNameEntryFromModal()">Join Room</button>
+                        <button id="cancelNameBtn" class="btn-secondary" onclick="cancelNameEntryFromModal()">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -171,18 +173,6 @@
                 </div>
                 <button id="leaveGameBtn" class="btn-danger hidden" onclick="leaveRoom()" style="margin-left: auto;">Leave Game</button>
             </div>
-
-            <!-- Shared Moments Gallery -->
-            <aside id="momentsGalleryShell" class="moments-gallery-shell" aria-live="polite">
-                <div class="moments-gallery-header">
-                    <h2>Shared Moments</h2>
-                    <button id="openWebcamConsentBtn" class="btn-secondary moments-opt-in-btn" type="button">Enable Camera</button>
-                </div>
-                <p class="moments-gallery-subtitle">Photos/videos are only captured when you explicitly trigger capture during gameplay moments.</p>
-                <div id="momentsGalleryGrid" class="moments-gallery-grid" data-moments-gallery="shared">
-                    <div class="moments-gallery-placeholder">Moments captured this round will appear here.</div>
-                </div>
-            </aside>
 
             <!-- Players -->
             <div class="players-section" id="playersContainer"></div>
@@ -291,7 +281,7 @@
 
         <!-- Webcam Consent Modal -->
         <div id="webcamConsentModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="webcamConsentTitle">
-            <div class="modal-content">
+            <div class="modal-content webcam-consent-modal-content">
                 <h3 id="webcamConsentTitle">Webcam Consent for Shared Moments</h3>
                 <p class="modal-description webcam-consent-intro">
                     If you opt in, this game can capture short camera moments only when you explicitly trigger a capture prompt (for submit, reveal, or winner moments).
@@ -300,16 +290,49 @@
                     Captures are visible to everyone currently in this room and are scoped to the active round gallery.
                 </p>
                 <ul class="webcam-consent-list">
-                    <li>Click <strong>Allow Webcam</strong> below.</li>
-                    <li>When your browser asks for camera access, choose <strong>Allow</strong>.</li>
-                    <li>If you deny access, reopen this modal after updating camera permission in your browser's site settings.</li>
+                    <li>Select your preferred camera from the dropdown.</li>
+                    <li>Click <strong>Enable Webcam</strong> and allow browser camera access.</li>
+                    <li>Check the preview, then click <strong>OK</strong> to confirm your camera choice.</li>
                 </ul>
                 <p class="modal-description webcam-consent-recovery">
                     Denied already? Open your browser site settings (lock/camera icon near the address bar), set camera access to <strong>Allow</strong>, then return and try again.
                 </p>
+                <div class="webcam-picker-section">
+                    <label for="webcamDeviceSelect">Camera device</label>
+                    <select id="webcamDeviceSelect" class="webcam-device-select" disabled>
+                        <option value="">Allow webcam to load devices...</option>
+                    </select>
+                    <p class="webcam-picker-help">Pick which webcam to use for captures. Preview updates when you change camera.</p>
+                </div>
+                <div class="modal-actions webcam-enable-action">
+                    <button id="allowWebcamBtn" class="btn-primary" type="button">Enable Webcam</button>
+                </div>
+                <div class="webcam-preview-shell">
+                    <video id="webcamPreviewVideo" class="webcam-preview-video" autoplay muted playsinline></video>
+                </div>
                 <div class="modal-actions modal-actions-inline">
-                    <button id="allowWebcamBtn" class="btn-primary" type="button">Allow Webcam</button>
+                    <button id="confirmWebcamBtn" class="btn-primary" type="button" disabled>OK</button>
                     <button id="deferWebcamBtn" class="btn-secondary" type="button">Not Now</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shared Moments Modal -->
+        <div id="sharedMomentsModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="sharedMomentsTitle">
+            <div class="modal-content moments-modal-content">
+                <button id="closeSharedMomentsBtn" class="moments-close-btn" type="button" aria-label="Close shared moments modal">×</button>
+                <div class="moments-gallery-header">
+                    <h3 id="sharedMomentsTitle">Shared Moments</h3>
+                </div>
+                <p class="moments-gallery-subtitle">Photos/videos are only captured when you explicitly trigger capture during gameplay moments.</p>
+                <p id="momentsCameraToggleDescription" class="moments-camera-toggle-description">
+                    Enable your camera to share key-moment captures with everyone in this room. You can disable it any time.
+                </p>
+                <div class="moments-camera-toggle-row">
+                    <button id="openWebcamConsentBtn" class="btn-secondary moments-opt-in-btn" type="button">Enable Camera</button>
+                </div>
+                <div id="momentsGalleryGrid" class="moments-gallery-grid" data-moments-gallery="shared">
+                    <div class="moments-gallery-placeholder">Moments captured this round will appear here.</div>
                 </div>
             </div>
         </div>

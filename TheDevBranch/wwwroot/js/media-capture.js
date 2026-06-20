@@ -23,8 +23,14 @@ const MEDIA_CAPTURE_MOMENTS = {
 };
 
 let mediaCaptureInitialized = false;
+let mediaSharedMomentsTriggerBound = false;
 let mediaCaptureInFlight = false;
 let mediaCaptureCurrentStream = null;
+let mediaCaptureWarmupPromise = null;
+let mediaCaptureWarmupReleaseTimer = null;
+let webcamModalPreviewStream = null;
+let selectedWebcamDeviceId = '';
+let webcamPreviewReadyForConfirmation = false;
 const mediaCapturedMomentKeys = new Set();
 const mediaCaptureQueuedAtByKey = new Map();
 const mediaGalleryItems = new Map();
@@ -50,23 +56,12 @@ function initializeMediaCapture() {
 }
 
 async function requestWebcamConsentAndEnable() {
-    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
-        showStatus('This browser cannot access the camera for key-moment captures.');
-        return false;
-    }
-
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: {
-                width: { ideal: 640, max: 960 },
-                height: { ideal: 360, max: 540 },
-                frameRate: { ideal: 16, max: 24 },
-                facingMode: 'user'
-            }
-        });
-
-        mediaCaptureCurrentStream = stream;
+        await populateWebcamDevicePicker();
+        const previewReady = await startWebcamModalPreview();
+        if (!previewReady) {
+            return false;
+        }
         showStatus('Camera enabled for key moments.');
         return true;
     } catch (err) {
@@ -78,19 +73,43 @@ async function requestWebcamConsentAndEnable() {
         console.warn('Failed to enable camera for key moments:', err);
         showStatus('Could not enable camera right now. You can keep playing without captures.');
         return false;
-    } finally {
-        cleanupMediaCaptureTracks();
     }
 }
 
 function bindWebcamConsentButtons() {
     const openButton = document.getElementById('openWebcamConsentBtn');
     const allowButton = document.getElementById('allowWebcamBtn');
+    const confirmButton = document.getElementById('confirmWebcamBtn');
     const deferButton = document.getElementById('deferWebcamBtn');
+    const webcamDeviceSelect = document.getElementById('webcamDeviceSelect');
+    const openSharedMomentsButton = document.getElementById('openSharedMomentsBtn');
+    const closeSharedMomentsButton = document.getElementById('closeSharedMomentsBtn');
+
+    if (!mediaSharedMomentsTriggerBound) {
+        mediaSharedMomentsTriggerBound = true;
+        document.addEventListener('click', (event) => {
+            const momentsButton = event.target.closest('#openSharedMomentsBtn');
+            if (!momentsButton) {
+                return;
+            }
+
+            openSharedMomentsModal();
+        });
+    }
 
     if (openButton && !openButton.dataset.captureBound) {
         openButton.dataset.captureBound = 'true';
         openButton.addEventListener('click', async () => {
+            if (captureConsentGranted) {
+                if (typeof setWebcamConsentChoice === 'function') {
+                    await setWebcamConsentChoice(false);
+                } else {
+                    await setWebcamConsentChoiceFallback(false);
+                }
+                showStatus('Camera disabled for shared moments.');
+                return;
+            }
+
             if (typeof openWebcamConsentModal === 'function') {
                 await openWebcamConsentModal();
                 return;
@@ -103,6 +122,25 @@ function bindWebcamConsentButtons() {
     if (allowButton && !allowButton.dataset.captureBound) {
         allowButton.dataset.captureBound = 'true';
         allowButton.addEventListener('click', async () => {
+            const ready = await requestWebcamConsentAndEnable();
+            if (ready) {
+                setWebcamConfirmReady(true);
+            }
+        });
+    }
+
+    if (confirmButton && !confirmButton.dataset.captureBound) {
+        confirmButton.dataset.captureBound = 'true';
+        confirmButton.addEventListener('click', async () => {
+            if (!webcamPreviewReadyForConfirmation) {
+                return;
+            }
+
+            stopWebcamModalPreview();
+
+            // Force future captures to reopen using the currently selected camera.
+            cleanupMediaCaptureTracks();
+
             if (typeof setWebcamConsentChoice === 'function') {
                 await setWebcamConsentChoice(true);
                 return;
@@ -123,6 +161,68 @@ function bindWebcamConsentButtons() {
             await setWebcamConsentChoiceFallback(false);
         });
     }
+
+    if (webcamDeviceSelect && !webcamDeviceSelect.dataset.captureBound) {
+        webcamDeviceSelect.dataset.captureBound = 'true';
+        webcamDeviceSelect.addEventListener('change', async (event) => {
+            selectedWebcamDeviceId = event.target?.value || '';
+            cleanupMediaCaptureTracks();
+
+            if (webcamModalPreviewStream || webcamPreviewReadyForConfirmation || captureConsentGranted) {
+                await startWebcamModalPreview();
+            }
+        });
+    }
+
+    if (openSharedMomentsButton && !openSharedMomentsButton.dataset.captureBound) {
+        openSharedMomentsButton.dataset.captureBound = 'true';
+        openSharedMomentsButton.addEventListener('click', () => {
+            openSharedMomentsModal();
+        });
+    }
+
+    if (closeSharedMomentsButton && !closeSharedMomentsButton.dataset.captureBound) {
+        closeSharedMomentsButton.dataset.captureBound = 'true';
+        closeSharedMomentsButton.addEventListener('click', () => {
+            closeSharedMomentsModal();
+        });
+    }
+}
+
+function openSharedMomentsModal() {
+    const modal = document.getElementById('sharedMomentsModal');
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('active');
+}
+
+function closeSharedMomentsModal() {
+    const modal = document.getElementById('sharedMomentsModal');
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.remove('active');
+    modal.classList.add('hidden');
+}
+
+async function onWebcamConsentModalOpened() {
+    await populateWebcamDevicePicker();
+    if (captureConsentGranted) {
+        const previewReady = await startWebcamModalPreview();
+        setWebcamConfirmReady(previewReady);
+    } else {
+        stopWebcamModalPreview();
+        setWebcamConfirmReady(false);
+    }
+}
+
+function onWebcamConsentModalClosed() {
+    stopWebcamModalPreview();
+    setWebcamConfirmReady(false);
 }
 
 async function openWebcamConsentModalFallback() {
@@ -143,21 +243,134 @@ async function openWebcamConsentModalFallback() {
 }
 
 async function setWebcamConsentChoiceFallback(consentGranted) {
-    let resolvedConsent = !!consentGranted;
-    if (resolvedConsent) {
-        resolvedConsent = await requestWebcamConsentAndEnable();
-    }
-
     document.dispatchEvent(new CustomEvent('webcamConsentChoiceChanged', {
-        detail: { consentGranted: resolvedConsent }
+        detail: { consentGranted: !!consentGranted }
     }));
 
-    if (!consentGranted || resolvedConsent) {
-        const modal = document.getElementById('webcamConsentModal');
-        if (modal) {
-            modal.classList.remove('active');
-            modal.classList.add('hidden');
+    const modal = document.getElementById('webcamConsentModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.classList.add('hidden');
+    }
+}
+
+async function populateWebcamDevicePicker() {
+    const webcamDeviceSelect = document.getElementById('webcamDeviceSelect');
+    if (!webcamDeviceSelect || !navigator.mediaDevices || typeof navigator.mediaDevices.enumerateDevices !== 'function') {
+        return;
+    }
+
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(device => device.kind === 'videoinput');
+
+        webcamDeviceSelect.innerHTML = '';
+        if (cameras.length === 0) {
+            webcamDeviceSelect.disabled = true;
+            webcamDeviceSelect.appendChild(new Option('No cameras found', ''));
+            return;
         }
+
+        cameras.forEach((camera, index) => {
+            const label = camera.label || `Camera ${index + 1}`;
+            webcamDeviceSelect.appendChild(new Option(label, camera.deviceId));
+        });
+
+        const matchingCamera = cameras.find(camera => camera.deviceId === selectedWebcamDeviceId);
+        if (!matchingCamera) {
+            selectedWebcamDeviceId = cameras[0].deviceId;
+        }
+
+        webcamDeviceSelect.value = selectedWebcamDeviceId;
+        webcamDeviceSelect.disabled = false;
+    } catch (err) {
+        console.warn('Failed to load webcam devices:', err);
+    }
+}
+
+function buildVideoConstraints() {
+    const base = {
+        width: { ideal: 640, max: 960 },
+        height: { ideal: 360, max: 540 },
+        frameRate: { ideal: 16, max: 24 }
+    };
+
+    if (selectedWebcamDeviceId) {
+        return {
+            ...base,
+            deviceId: { exact: selectedWebcamDeviceId }
+        };
+    }
+
+    return {
+        ...base,
+        facingMode: 'user'
+    };
+}
+
+function isWebcamConsentModalOpen() {
+    const modal = document.getElementById('webcamConsentModal');
+    return !!(modal && !modal.classList.contains('hidden'));
+}
+
+async function startWebcamModalPreview() {
+    const previewVideo = document.getElementById('webcamPreviewVideo');
+    if (!previewVideo || !navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+        setWebcamConfirmReady(false);
+        return false;
+    }
+
+    stopWebcamModalPreview();
+
+    try {
+        const previewStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: buildVideoConstraints()
+        });
+
+        if (!isWebcamConsentModalOpen()) {
+            previewStream.getTracks().forEach(track => track.stop());
+            setWebcamConfirmReady(false);
+            return false;
+        }
+
+        webcamModalPreviewStream = previewStream;
+        previewVideo.srcObject = webcamModalPreviewStream;
+        await previewVideo.play().catch(() => { });
+        setWebcamConfirmReady(true);
+        return true;
+    } catch (err) {
+        if (isCameraPermissionError(err)) {
+            showStatus('Camera permission not granted. Allow camera access to preview devices.');
+            setWebcamConfirmReady(false);
+            return false;
+        }
+
+        console.warn('Failed to start webcam preview:', err);
+        setWebcamConfirmReady(false);
+        return false;
+    }
+}
+
+function stopWebcamModalPreview() {
+    if (!webcamModalPreviewStream) {
+        return;
+    }
+
+    webcamModalPreviewStream.getTracks().forEach(track => track.stop());
+    webcamModalPreviewStream = null;
+
+    const previewVideo = document.getElementById('webcamPreviewVideo');
+    if (previewVideo) {
+        previewVideo.srcObject = null;
+    }
+}
+
+function setWebcamConfirmReady(isReady) {
+    webcamPreviewReadyForConfirmation = !!isReady;
+    const confirmButton = document.getElementById('confirmWebcamBtn');
+    if (confirmButton) {
+        confirmButton.disabled = !webcamPreviewReadyForConfirmation;
     }
 }
 
@@ -167,17 +380,31 @@ function applyCaptureConsentState(consentGranted) {
     refreshWebcamConsentButton();
 
     if (!captureConsentGranted) {
+        stopWebcamModalPreview();
         cleanupMediaCaptureTracks();
+        return;
+    }
+
+    populateWebcamDevicePicker();
+    const modal = document.getElementById('webcamConsentModal');
+    if (modal && !modal.classList.contains('hidden')) {
+        startWebcamModalPreview();
     }
 }
 
 function refreshWebcamConsentButton() {
     const optInButton = document.getElementById('openWebcamConsentBtn');
-    if (!optInButton) {
-        return;
+    const toggleDescription = document.getElementById('momentsCameraToggleDescription');
+
+    if (optInButton) {
+        optInButton.textContent = captureConsentGranted ? 'Disable Camera' : 'Enable Camera';
     }
 
-    optInButton.textContent = captureConsentGranted ? 'Camera Enabled' : 'Enable Camera';
+    if (toggleDescription) {
+        toggleDescription.textContent = captureConsentGranted
+            ? 'Your camera is enabled for key-moment captures. Disable it here any time.'
+            : 'Enable your camera to share key-moment captures with everyone in this room. You can disable it any time.';
+    }
 }
 
 async function syncCaptureConsentToHub(consentGranted) {
@@ -248,19 +475,15 @@ async function runMomentCapture(moment, round, promptText, captureKey) {
 
     try {
         showCapturePrompt(promptText || "Smile, you're on camera!");
-        await delayMediaCapture(450);
+        await delayMediaCapture(100);
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: {
-                width: { ideal: 640, max: 960 },
-                height: { ideal: 360, max: 540 },
-                frameRate: { ideal: 16, max: 24 },
-                facingMode: 'user'
-            }
-        });
-
-        mediaCaptureCurrentStream = stream;
+        const ready = await ensureCameraReadyForCapture();
+        if (!ready || !mediaCaptureCurrentStream) {
+            mediaCapturedMomentKeys.delete(captureKey);
+            mediaCaptureQueuedAtByKey.delete(captureKey);
+            return;
+        }
+        const stream = mediaCaptureCurrentStream;
 
         const clipPayload = await tryCaptureVideoClip(stream);
         const payload = clipPayload || await captureStillFrame(stream);
@@ -268,6 +491,10 @@ async function runMomentCapture(moment, round, promptText, captureKey) {
         if (!payload) {
             return;
         }
+
+        // Turn camera off immediately after capture so upload latency doesn't
+        // keep the webcam active indicator on.
+        cleanupMediaCaptureTracks();
 
         const captureId = createCaptureId();
         mediaPendingCaptureMomentKeysById.set(captureId, captureKey);
@@ -318,6 +545,81 @@ function hasRecentSubmitCapture(roundNumberValue) {
 function isCameraPermissionError(err) {
     const name = err?.name ?? '';
     return name === 'NotAllowedError' || name === 'SecurityError';
+}
+
+function primeCameraForUpcomingCapture(reason, holdMs = 1800) {
+    if (!captureConsentGranted || !hasJoinedRoom || !currentRoomId) {
+        return;
+    }
+
+    ensureCameraReadyForCapture()
+        .then((ready) => {
+            if (!ready) {
+                return;
+            }
+            holdCameraWarmup(holdMs);
+        })
+        .catch((err) => {
+            if (isCameraPermissionError(err)) {
+                applyCaptureConsentState(false);
+                syncCaptureConsentToHub(false);
+                showStatus('Camera permission denied. Gameplay continues without captures.');
+                return;
+            }
+
+            console.warn(`Camera prewarm failed for ${reason}:`, err);
+        });
+}
+
+function hasActiveMediaStream() {
+    if (!mediaCaptureCurrentStream) {
+        return false;
+    }
+
+    return mediaCaptureCurrentStream.getVideoTracks().some(track => track.readyState === 'live');
+}
+
+async function ensureCameraReadyForCapture() {
+    if (hasActiveMediaStream()) {
+        return true;
+    }
+
+    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+        showStatus('This browser cannot access the camera for key-moment captures.');
+        return false;
+    }
+
+    if (mediaCaptureWarmupPromise) {
+        return mediaCaptureWarmupPromise;
+    }
+
+    mediaCaptureWarmupPromise = navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: buildVideoConstraints()
+    }).then((stream) => {
+        mediaCaptureCurrentStream = stream;
+        return true;
+    }).finally(() => {
+        mediaCaptureWarmupPromise = null;
+    });
+
+    return mediaCaptureWarmupPromise;
+}
+
+function holdCameraWarmup(durationMs) {
+    if (!captureConsentGranted || !hasActiveMediaStream()) {
+        return;
+    }
+
+    if (mediaCaptureWarmupReleaseTimer) {
+        clearTimeout(mediaCaptureWarmupReleaseTimer);
+    }
+
+    mediaCaptureWarmupReleaseTimer = setTimeout(() => {
+        if (!mediaCaptureInFlight) {
+            cleanupMediaCaptureTracks();
+        }
+    }, durationMs);
 }
 
 async function tryCaptureVideoClip(stream) {
@@ -505,8 +807,24 @@ function handleMomentCaptureAdded(item) {
     }
 
     mediaPendingCaptureMomentKeysById.delete(item.captureId);
-    mediaGalleryItems.set(item.captureId, item);
+    const receivedItem = {
+        ...item,
+        _receivedAtMs: Date.now()
+    };
+
+    const existingItem = mediaGalleryItems.get(item.captureId);
+    if (existingItem && existingItem.payloadBase64 !== item.payloadBase64) {
+        const uniqueCaptureKey = `${item.captureId}:${receivedItem._receivedAtMs}`;
+        mediaGalleryItems.set(uniqueCaptureKey, {
+            ...receivedItem,
+            captureId: uniqueCaptureKey
+        });
+    } else {
+        mediaGalleryItems.set(item.captureId, receivedItem);
+    }
+
     renderMomentCaptureGallery();
+    showMomentSpotlight(receivedItem);
 }
 
 function handleMomentCaptureRejected(evt) {
@@ -547,7 +865,14 @@ function renderMomentCaptureGallery() {
     grid.innerHTML = '';
 
     const items = Array.from(mediaGalleryItems.values())
-        .sort((a, b) => new Date(a.capturedAtUtc || 0).getTime() - new Date(b.capturedAtUtc || 0).getTime());
+        .sort((a, b) => {
+            const receivedDelta = Number(b?._receivedAtMs || 0) - Number(a?._receivedAtMs || 0);
+            if (receivedDelta !== 0) {
+                return receivedDelta;
+            }
+
+            return new Date(b.capturedAtUtc || 0).getTime() - new Date(a.capturedAtUtc || 0).getTime();
+        });
 
     if (items.length === 0) {
         const placeholder = document.createElement('div');
@@ -576,7 +901,7 @@ function renderMomentCaptureGallery() {
         caption.style.marginTop = '6px';
         caption.style.fontSize = '0.72rem';
         caption.style.color = 'rgba(255,255,255,0.92)';
-        caption.textContent = `${item.moment || 'Moment'} • ${formatCaptureTime(item.capturedAtUtc)}`;
+        caption.textContent = formatMomentCaptureCaption(item);
         card.appendChild(caption);
 
         grid.appendChild(card);
@@ -611,6 +936,99 @@ function createGalleryMediaElement(item) {
     return image;
 }
 
+function getMomentsButtonAnchorPoint() {
+    const momentsButton = document.getElementById('openSharedMomentsBtn');
+    if (!momentsButton) {
+        return {
+            x: Math.round(window.innerWidth * 0.88),
+            y: Math.round(window.innerHeight * 0.1)
+        };
+    }
+
+    const rect = momentsButton.getBoundingClientRect();
+    return {
+        x: Math.round(rect.left + (rect.width / 2)),
+        y: Math.round(rect.top + (rect.height / 2))
+    };
+}
+
+function calculateSpotlightTravel(anchorX, anchorY) {
+    const viewportWidth = Math.max(window.innerWidth, 360);
+    const viewportHeight = Math.max(window.innerHeight, 480);
+    const horizontalTarget = Math.round(viewportWidth * (0.28 + Math.random() * 0.34));
+    const verticalTarget = Math.round(viewportHeight * (0.26 + Math.random() * 0.46));
+    const driftX = Math.round((Math.random() * 180) - 90);
+    const driftY = Math.round((Math.random() * 140) - 70);
+
+    return {
+        x1: horizontalTarget - anchorX,
+        y1: verticalTarget - anchorY,
+        x2: (horizontalTarget + driftX) - anchorX,
+        y2: (verticalTarget + driftY) - anchorY
+    };
+}
+
+function showMomentSpotlight(item) {
+    const layer = document.getElementById('momentsSpotlightLayer');
+    if (!layer) {
+        return;
+    }
+
+    const media = createSpotlightMediaElement(item);
+    if (!media) {
+        return;
+    }
+
+    const anchor = getMomentsButtonAnchorPoint();
+    const travel = calculateSpotlightTravel(anchor.x, anchor.y);
+    const spotlight = document.createElement('article');
+    spotlight.className = 'moments-spotlight-item';
+    spotlight.style.left = `${anchor.x}px`;
+    spotlight.style.top = `${anchor.y}px`;
+    spotlight.style.setProperty('--spotlight-travel-x', `${travel.x1}px`);
+    spotlight.style.setProperty('--spotlight-travel-y', `${travel.y1}px`);
+    spotlight.style.setProperty('--spotlight-travel-x2', `${travel.x2}px`);
+    spotlight.style.setProperty('--spotlight-travel-y2', `${travel.y2}px`);
+    spotlight.appendChild(media);
+
+    const caption = document.createElement('div');
+    caption.className = 'moments-spotlight-caption';
+    caption.textContent = formatMomentCaptureCaption(item);
+    spotlight.appendChild(caption);
+
+    layer.appendChild(spotlight);
+    setTimeout(() => {
+        spotlight.remove();
+    }, 4300);
+}
+
+function createSpotlightMediaElement(item) {
+    if (!item?.payloadBase64 || !item?.mimeType) {
+        return null;
+    }
+
+    const source = `data:${item.mimeType};base64,${item.payloadBase64}`;
+    if (item.mimeType.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.src = source;
+        video.muted = true;
+        video.loop = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.controls = false;
+        video.preload = 'metadata';
+        video.addEventListener('canplay', () => {
+            video.play().catch(() => { });
+        }, { once: true });
+        return video;
+    }
+
+    const image = document.createElement('img');
+    image.src = source;
+    image.alt = `${item.moment || 'Moment'} spotlight`;
+    return image;
+}
+
 function formatCaptureTime(capturedAtUtc) {
     if (!capturedAtUtc) {
         return 'just now';
@@ -624,7 +1042,19 @@ function formatCaptureTime(capturedAtUtc) {
     return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+function formatMomentCaptureCaption(item) {
+    const playerName = item?.capturedByPlayerName || 'Player';
+    const momentLabel = item?.moment || 'Moment';
+    const roundLabel = Number(item?.roundNumber) > 0 ? `Round ${item.roundNumber}` : 'Round';
+    return `${playerName} • ${momentLabel} • ${roundLabel} • ${formatCaptureTime(item?.capturedAtUtc)}`;
+}
+
 function cleanupMediaCaptureTracks() {
+    if (mediaCaptureWarmupReleaseTimer) {
+        clearTimeout(mediaCaptureWarmupReleaseTimer);
+        mediaCaptureWarmupReleaseTimer = null;
+    }
+
     if (!mediaCaptureCurrentStream) {
         return;
     }
@@ -651,14 +1081,23 @@ function showCapturePrompt(message) {
 }
 
 function resetMediaCaptureSession() {
+    stopWebcamModalPreview();
     cleanupMediaCaptureTracks();
     mediaCaptureInFlight = false;
+    mediaCaptureWarmupPromise = null;
     mediaCapturedMomentKeys.clear();
     mediaCaptureQueuedAtByKey.clear();
     mediaGalleryItems.clear();
     mediaPendingCaptureMomentKeysById.clear();
     applyCaptureConsentState(false);
     renderMomentCaptureGallery();
+
+    const layer = document.getElementById('momentsSpotlightLayer');
+    if (layer) {
+        layer.innerHTML = '';
+    }
 }
 
 window.requestWebcamConsentAndEnable = requestWebcamConsentAndEnable;
+window.onWebcamConsentModalOpened = onWebcamConsentModalOpened;
+window.onWebcamConsentModalClosed = onWebcamConsentModalClosed;
