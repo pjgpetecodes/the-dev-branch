@@ -162,27 +162,36 @@ function updateWelcomeHeader() {
         const playerCount = gameState?.players?.length || 0;
         const playerNameToShow = currentPlayerName || document.getElementById('playerName').value.trim();
         
-        let html = `<div class="welcome-line-1">Welcome <strong>${playerNameToShow}</strong> to Room <strong>${currentRoomId}</strong></div>`;
-        html += `<div class="welcome-line-2">Players in room: <strong>${playerCount}</strong>`;
+        let contentHtml = `<div class="welcome-line-1">Welcome <strong>${playerNameToShow}</strong> to Room <strong>${currentRoomId}</strong></div>`;
+        contentHtml += `<div class="welcome-line-2">Players in room: <strong>${playerCount}</strong>`;
         if (gameState?.deckName) {
-            html += ` | Deck: <strong>${gameState.deckName}</strong>`;
+            contentHtml += ` | Deck: <strong>${gameState.deckName}</strong>`;
         }
         if (gameState?.burnModeEnabled) {
-            html += ` | <strong>🔥 Burn Mode</strong>`;
+            contentHtml += ` | <strong>🔥 Burn Mode</strong>`;
         }
         
         if (gameState && gameState.state === 0) {
-            html += ` | <strong>${totalRounds}</strong> rounds`;
+            contentHtml += ` | <strong>${totalRounds}</strong> rounds`;
         }
-        html += `</div>`;
+        contentHtml += `</div>`;
         
         if (gameState && gameState.state !== 0) {
             if (gameState.isDeciderRound) {
-                html += `<div class="round-info">⚡ DECIDER ROUND ⚡</div>`;
+                contentHtml += `<div class="round-info">⚡ DECIDER ROUND ⚡</div>`;
             } else {
-                html += `<div class="round-info">Round: ${roundNumber} / ${totalRounds}</div>`;
+                contentHtml += `<div class="round-info">Round: ${roundNumber} / ${totalRounds}</div>`;
             }
         }
+
+        const html = `
+            <div class="welcome-header-layout">
+                <div class="welcome-header-content">${contentHtml}</div>
+                <div class="welcome-header-actions">
+                    <button id="openSharedMomentsBtn" class="btn-secondary moments-open-btn" type="button">Moments</button>
+                </div>
+            </div>
+        `;
         
         welcomeHeader.innerHTML = html;
         welcomeHeader.classList.remove('hidden');

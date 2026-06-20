@@ -162,13 +162,22 @@ function checkUrlForRoom() {
         if (!validateRoomId(roomCode)) {
             joinedViaLink = false;
             document.getElementById('roomCode').value = '';
+            if (typeof setJoinLinkEntryFocus === 'function') {
+                setJoinLinkEntryFocus(false);
+            }
             return;
         }
 
         joinedViaLink = true;
-        document.getElementById('playerName').parentElement.classList.add('hidden');
-        document.querySelector('.room-tabs-container').classList.add('hidden');
+        if (typeof setJoinLinkEntryFocus === 'function') {
+            setJoinLinkEntryFocus(true);
+        }
         showNameEntryModal(roomCode);
+        return;
+    }
+
+    if (typeof setJoinLinkEntryFocus === 'function') {
+        setJoinLinkEntryFocus(false);
     }
 }
 

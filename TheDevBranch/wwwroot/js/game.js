@@ -375,13 +375,18 @@ async function submitSelectedCards() {
         return;
     }
 
+    const likelyFinalSubmission = isLikelyFinalSubmissionForRound();
+
     try {
+        if (!likelyFinalSubmission && typeof primeCameraForUpcomingCapture === 'function') {
+            primeCameraForUpcomingCapture('submit', 1800);
+        }
         await connection.invoke("SubmitCards", currentRoomId, cardIds, currentConnectionId);
         currentPlayer.hasSubmitted = true;
         renderHand();
         updateSubmitButtonState();
         showStatus("Cards submitted! Waiting for other players...");
-        if (!isLikelyFinalSubmissionForRound()) {
+        if (!likelyFinalSubmission) {
             queueSubmitMomentCapture();
         }
     } catch (err) {
@@ -577,12 +582,12 @@ function renderWinningBlackCard(winnerId) {
 // Initialization
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("DOM Content Loaded - Initializing game");
+
+    // Handle join-link UX first so users don't briefly see normal lobby controls.
+    checkUrlForRoom();
     
     // Initialize SignalR connection
     await initializeConnection();
-    
-    // Check for room code in URL
-    checkUrlForRoom();
     
     // Initialize how-to-play section
     initializeHowToPlayCollapse();

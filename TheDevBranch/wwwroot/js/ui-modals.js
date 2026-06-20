@@ -1,5 +1,14 @@
 // Modal Functions
 
+function setJoinLinkEntryFocus(isFocused) {
+    const lobby = document.getElementById('lobby');
+    if (lobby) {
+        lobby.classList.toggle('join-link-focus', !!isFocused);
+    }
+
+    document.body.classList.toggle('join-link-entry-pending', !!isFocused);
+}
+
 function showNameEntryModal(roomCode) {
     const modal = document.getElementById('nameEntryModal');
     const modalInput = document.getElementById('modalPlayerName');
@@ -7,6 +16,7 @@ function showNameEntryModal(roomCode) {
     
     closeAllModals();
     clearNameError('modal');
+    setJoinLinkEntryFocus(!!joinedViaLink);
     
     modal.classList.remove('hidden');
     modal.classList.add('active');
@@ -29,6 +39,7 @@ function closeNameEntryModal() {
     modal.classList.remove('active');
     modal.classList.add('hidden');
     clearNameError('modal');
+    setJoinLinkEntryFocus(false);
     
     if (modalInput) {
         modalInput.value = '';
@@ -40,6 +51,10 @@ function closeNameEntryModal() {
         window.history.replaceState({}, document.title, window.location.pathname);
         joinedViaLink = false;
     }
+}
+
+function cancelNameEntryFromModal() {
+    closeNameEntryModal();
 }
 
 function handleModalJoinGame() {
@@ -156,13 +171,6 @@ function handleQuitGame() {
 }
 
 async function openWebcamConsentModal() {
-    if (captureConsentGranted) {
-        document.dispatchEvent(new CustomEvent('webcamConsentChoiceChanged', {
-            detail: { consentGranted: true }
-        }));
-        return;
-    }
-
     const modal = document.getElementById('webcamConsentModal');
     if (!modal) {
         return;
@@ -171,6 +179,10 @@ async function openWebcamConsentModal() {
     closeAllModals();
     modal.classList.remove('hidden');
     modal.classList.add('active');
+
+    if (typeof onWebcamConsentModalOpened === 'function') {
+        await onWebcamConsentModalOpened();
+    }
 }
 
 function closeWebcamConsentModal() {
@@ -181,38 +193,52 @@ function closeWebcamConsentModal() {
 
     modal.classList.remove('active');
     modal.classList.add('hidden');
+
+    if (typeof onWebcamConsentModalClosed === 'function') {
+        onWebcamConsentModalClosed();
+    }
 }
 
 async function setWebcamConsentChoice(consentGranted) {
-    let resolvedConsent = !!consentGranted;
-    if (resolvedConsent && typeof requestWebcamConsentAndEnable === 'function') {
-        resolvedConsent = await requestWebcamConsentAndEnable();
-    }
+    const resolvedConsent = !!consentGranted;
 
     const optInButton = document.getElementById('openWebcamConsentBtn');
+    const toggleDescription = document.getElementById('momentsCameraToggleDescription');
     document.body.dataset.webcamConsent = resolvedConsent ? 'granted' : 'deferred';
 
     if (optInButton) {
-        optInButton.textContent = resolvedConsent ? 'Camera Enabled' : 'Enable Camera';
+        optInButton.textContent = resolvedConsent ? 'Disable Camera' : 'Enable Camera';
+    }
+
+    if (toggleDescription) {
+        toggleDescription.textContent = resolvedConsent
+            ? 'Your camera is enabled for key-moment captures. Disable it here any time.'
+            : 'Enable your camera to share key-moment captures with everyone in this room. You can disable it any time.';
     }
 
     document.dispatchEvent(new CustomEvent('webcamConsentChoiceChanged', {
         detail: { consentGranted: resolvedConsent }
     }));
 
-    if (!consentGranted || resolvedConsent) {
-        closeWebcamConsentModal();
-    }
+    closeWebcamConsentModal();
 }
 
 function closeAllModals() {
+    const webcamModal = document.getElementById('webcamConsentModal');
+    const wasWebcamOpen = !!(webcamModal && !webcamModal.classList.contains('hidden'));
     const modals = document.querySelectorAll('.modal-overlay');
     modals.forEach(modal => {
         modal.classList.remove('active');
         modal.classList.add('hidden');
     });
+
+    if (wasWebcamOpen && typeof onWebcamConsentModalClosed === 'function') {
+        onWebcamConsentModalClosed();
+    }
 }
 
 window.openWebcamConsentModal = openWebcamConsentModal;
 window.closeWebcamConsentModal = closeWebcamConsentModal;
 window.setWebcamConsentChoice = setWebcamConsentChoice;
+window.cancelNameEntryFromModal = cancelNameEntryFromModal;
+window.setJoinLinkEntryFocus = setJoinLinkEntryFocus;

@@ -489,6 +489,7 @@ public class GameHub : Hub
                 RoundNumber = request.RoundNumber,
                 Moment = request.Moment,
                 CapturedByConnectionId = Context.ConnectionId,
+                CapturedByPlayerName = room.Players.FirstOrDefault(p => string.Equals(p.ConnectionId, Context.ConnectionId, StringComparison.Ordinal))?.Name ?? "Player",
                 CapturedAtUtc = DateTime.UtcNow,
                 MimeType = normalizedMimeType,
                 DurationMs = request.DurationMs,
