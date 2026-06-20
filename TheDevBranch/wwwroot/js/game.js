@@ -2,10 +2,16 @@
 
 // Initialize SignalR connection
 async function initializeConnection() {
+    initializeMediaCapture();
+
     connection = new signalR.HubConnectionBuilder()
         .withUrl("/gameHub")
         .withAutomaticReconnect()
         .build();
+
+    connection.onclose(() => {
+        resetMediaCaptureSession();
+    });
 
     // Set up all event handlers
     initializeSignalREvents();
@@ -141,6 +147,7 @@ async function joinRoom(roomCodeParam = null) {
         await connection.invoke("JoinRoom", roomCode, playerName);
         hasJoinedRoom = true;
         disableJoinControls();
+        await syncCaptureConsentToHub(captureConsentGranted);
         updateWelcomeHeader();
         return true;
     } catch (err) {
@@ -168,6 +175,7 @@ async function leaveRoom() {
     }
 
     const roomIdToLeave = currentRoomId;
+    resetMediaCaptureSession();
     
     try {
         if (roomIdToLeave) {
@@ -373,10 +381,32 @@ async function submitSelectedCards() {
         renderHand();
         updateSubmitButtonState();
         showStatus("Cards submitted! Waiting for other players...");
+        if (!isLikelyFinalSubmissionForRound()) {
+            queueSubmitMomentCapture();
+        }
     } catch (err) {
         console.error("Error submitting cards:", err);
         showError(err.message || "Failed to submit cards");
     }
+}
+
+function isLikelyFinalSubmissionForRound() {
+    if (!gameState || !Array.isArray(gameState.players)) {
+        return false;
+    }
+
+    const playersWhoSubmit = gameState.players.filter(player => !player.isCardCzar);
+    if (playersWhoSubmit.length === 0) {
+        return false;
+    }
+
+    const submittedCards = gameState.submittedCards || {};
+    const submittedCount = Object.keys(submittedCards).length;
+    const activeConnectionId = isDemoMode ? currentConnectionId : connection?.connectionId;
+    const isCurrentPlayerAlreadyCounted = !!(activeConnectionId && submittedCards[activeConnectionId]);
+    const projectedSubmittedCount = submittedCount + (isCurrentPlayerAlreadyCounted ? 0 : 1);
+
+    return projectedSubmittedCount >= playersWhoSubmit.length;
 }
 
 // Game Actions

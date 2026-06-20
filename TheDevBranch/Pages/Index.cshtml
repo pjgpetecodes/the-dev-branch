@@ -172,6 +172,18 @@
                 <button id="leaveGameBtn" class="btn-danger hidden" onclick="leaveRoom()" style="margin-left: auto;">Leave Game</button>
             </div>
 
+            <!-- Shared Moments Gallery -->
+            <aside id="momentsGalleryShell" class="moments-gallery-shell" aria-live="polite">
+                <div class="moments-gallery-header">
+                    <h2>Shared Moments</h2>
+                    <button id="openWebcamConsentBtn" class="btn-secondary moments-opt-in-btn" type="button">Enable Camera</button>
+                </div>
+                <p class="moments-gallery-subtitle">Photos/videos are only captured when you explicitly trigger capture during gameplay moments.</p>
+                <div id="momentsGalleryGrid" class="moments-gallery-grid" data-moments-gallery="shared">
+                    <div class="moments-gallery-placeholder">Moments captured this round will appear here.</div>
+                </div>
+            </aside>
+
             <!-- Players -->
             <div class="players-section" id="playersContainer"></div>
 
@@ -276,19 +288,45 @@
                 </div>
             </div>
         </div>
+
+        <!-- Webcam Consent Modal -->
+        <div id="webcamConsentModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="webcamConsentTitle">
+            <div class="modal-content">
+                <h3 id="webcamConsentTitle">Webcam Consent for Shared Moments</h3>
+                <p class="modal-description webcam-consent-intro">
+                    If you opt in, this game can capture short camera moments only when you explicitly trigger a capture prompt (for submit, reveal, or winner moments).
+                </p>
+                <p class="modal-description">
+                    Captures are visible to everyone currently in this room and are scoped to the active round gallery.
+                </p>
+                <ul class="webcam-consent-list">
+                    <li>Click <strong>Allow Webcam</strong> below.</li>
+                    <li>When your browser asks for camera access, choose <strong>Allow</strong>.</li>
+                    <li>If you deny access, reopen this modal after updating camera permission in your browser's site settings.</li>
+                </ul>
+                <p class="modal-description webcam-consent-recovery">
+                    Denied already? Open your browser site settings (lock/camera icon near the address bar), set camera access to <strong>Allow</strong>, then return and try again.
+                </p>
+                <div class="modal-actions modal-actions-inline">
+                    <button id="allowWebcamBtn" class="btn-primary" type="button">Allow Webcam</button>
+                    <button id="deferWebcamBtn" class="btn-secondary" type="button">Not Now</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
     
     <!-- Load JavaScript modules in dependency order -->
-    <script src="~/js/game-state.js"></script>
-    <script src="~/js/helpers.js"></script>
-    <script src="~/js/ui-notifications.js"></script>
-    <script src="~/js/ui-modals.js"></script>
-    <script src="~/js/ui-lobby.js"></script>
-    <script src="~/js/ui-game.js"></script>
-    <script src="~/js/signalr-events.js"></script>
-    <script src="~/js/demo-mode.js"></script>
-    <script src="~/js/game.js"></script>
+    <script src="~/js/game-state.js" asp-append-version="true"></script>
+    <script src="~/js/helpers.js" asp-append-version="true"></script>
+    <script src="~/js/ui-notifications.js" asp-append-version="true"></script>
+    <script src="~/js/ui-modals.js" asp-append-version="true"></script>
+    <script src="~/js/ui-lobby.js" asp-append-version="true"></script>
+    <script src="~/js/ui-game.js" asp-append-version="true"></script>
+    <script src="~/js/media-capture.js" asp-append-version="true"></script>
+    <script src="~/js/signalr-events.js" asp-append-version="true"></script>
+    <script src="~/js/demo-mode.js" asp-append-version="true"></script>
+    <script src="~/js/game.js" asp-append-version="true"></script>
 </body>
 </html>

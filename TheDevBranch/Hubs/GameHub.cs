@@ -324,11 +324,11 @@ public class GameHub : Hub
             roomId = NormalizeRoomId(roomId);
             _gameService.NextRound(roomId);
             var room = _gameService.GetRoom(roomId);
-            
+
+            await Clients.Group(roomId).SendAsync(MediaCaptureHubEvents.RoundCaptureGalleryCleared, room?.CurrentRound ?? 0);
             await Clients.Group(roomId).SendAsync("RoundStarted");
             await Clients.Group(roomId).SendAsync("GameStateUpdated", room);
-            
-            // Send updated hands to each player
+
             if (room != null)
             {
                 foreach (var player in room.Players)
@@ -336,13 +336,182 @@ public class GameHub : Hub
                     await Clients.Client(player.ConnectionId).SendAsync("HandUpdated", player.Hand);
                 }
             }
-            
+
             _logger.LogInformation($"Next round started in room {roomId}");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error starting next round");
             await Clients.Caller.SendAsync("Error", ex.Message);
+        }
+    }
+
+    public async Task SetCaptureConsent(string roomId, MediaCaptureConsentUpdate? update)
+    {
+        try
+        {
+            roomId = NormalizeRoomId(roomId);
+            var room = _gameService.GetRoom(roomId);
+            if (room == null)
+            {
+                await RejectCaptureUploadAsync(null, MediaCaptureRejections.RoomNotFound());
+                return;
+            }
+
+            if (!IsConnectionInRoom(room, Context.ConnectionId))
+            {
+                await RejectCaptureUploadAsync(null, MediaCaptureRejections.NotRoomMember());
+                return;
+            }
+
+            var normalizedUpdate = new MediaCaptureConsentUpdate
+            {
+                ConsentGranted = update?.ConsentGranted ?? false,
+                UpdatedAtUtc = DateTime.UtcNow
+            };
+
+            room.CaptureConsentByConnectionId[Context.ConnectionId] = normalizedUpdate;
+            _gameService.TouchRoom(roomId);
+
+            await Clients.Group(roomId).SendAsync(
+                MediaCaptureHubEvents.CaptureConsentUpdated,
+                Context.ConnectionId,
+                normalizedUpdate);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating capture consent");
+            await Clients.Caller.SendAsync("Error", ex.Message);
+        }
+    }
+
+    public async Task UploadMomentCapture(string roomId, MediaCaptureUploadRequest? request)
+    {
+        MediaCaptureRejection? rejection = null;
+
+        try
+        {
+            roomId = NormalizeRoomId(roomId);
+            var room = _gameService.GetRoom(roomId);
+            if (room == null)
+            {
+                rejection = MediaCaptureRejections.RoomNotFound();
+                return;
+            }
+
+            if (!IsConnectionInRoom(room, Context.ConnectionId))
+            {
+                rejection = MediaCaptureRejections.NotRoomMember();
+                return;
+            }
+
+            if (request == null)
+            {
+                rejection = MediaCaptureRejections.InvalidPayload();
+                return;
+            }
+
+            if (!request.ConsentGranted)
+            {
+                rejection = MediaCaptureRejections.ConsentRequired();
+                return;
+            }
+
+            if (!room.CaptureConsentByConnectionId.TryGetValue(Context.ConnectionId, out var consent) || !consent.ConsentGranted)
+            {
+                rejection = MediaCaptureRejections.ConsentRequired();
+                return;
+            }
+
+            if (request.RoundNumber != room.CurrentRound)
+            {
+                rejection = MediaCaptureRejections.InvalidRound();
+                return;
+            }
+
+            var normalizedMimeType = NormalizeCaptureMimeType(request.MimeType);
+            if (!MediaCaptureMimeTypes.Allowed.Contains(normalizedMimeType))
+            {
+                rejection = MediaCaptureRejections.InvalidMimeType();
+                return;
+            }
+
+            if (request.DurationMs < 0 || request.DurationMs > MediaCaptureLimits.MaxCaptureDurationMs)
+            {
+                rejection = MediaCaptureRejections.DurationTooLong();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(request.PayloadBase64))
+            {
+                rejection = MediaCaptureRejections.InvalidPayload();
+                return;
+            }
+
+            if (request.PayloadBase64.Length > MediaCaptureLimits.MaxEncodedPayloadCharacters)
+            {
+                rejection = MediaCaptureRejections.PayloadTooLarge();
+                return;
+            }
+
+            if (request.PayloadByteCount <= 0 || request.PayloadByteCount > MediaCaptureLimits.MaxDecodedPayloadBytes)
+            {
+                rejection = MediaCaptureRejections.PayloadTooLarge();
+                return;
+            }
+
+            if (room.RoundCaptures.Any(c => string.Equals(c.CaptureId, request.CaptureId, StringComparison.Ordinal)))
+            {
+                rejection = MediaCaptureRejections.InvalidPayload();
+                return;
+            }
+
+            byte[] decodedBytes;
+            try
+            {
+                decodedBytes = Convert.FromBase64String(request.PayloadBase64);
+            }
+            catch (FormatException)
+            {
+                rejection = MediaCaptureRejections.InvalidPayload();
+                return;
+            }
+
+            if (decodedBytes.Length != request.PayloadByteCount || decodedBytes.Length > MediaCaptureLimits.MaxDecodedPayloadBytes)
+            {
+                rejection = MediaCaptureRejections.InvalidPayload();
+                return;
+            }
+
+            var item = new MediaCaptureGalleryItem
+            {
+                CaptureId = string.IsNullOrWhiteSpace(request.CaptureId) ? Guid.NewGuid().ToString("N") : request.CaptureId.Trim(),
+                RoundNumber = request.RoundNumber,
+                Moment = request.Moment,
+                CapturedByConnectionId = Context.ConnectionId,
+                CapturedAtUtc = DateTime.UtcNow,
+                MimeType = normalizedMimeType,
+                DurationMs = request.DurationMs,
+                PayloadByteCount = decodedBytes.Length,
+                PayloadBase64 = request.PayloadBase64
+            };
+
+            AddCaptureWithEviction(room, item);
+            _gameService.TouchRoom(roomId);
+
+            await Clients.Group(roomId).SendAsync(MediaCaptureHubEvents.MomentCaptureAdded, item);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error uploading moment capture");
+            rejection = MediaCaptureRejections.InvalidPayload();
+        }
+        finally
+        {
+            if (rejection != null)
+            {
+                await RejectCaptureUploadAsync(request?.CaptureId, rejection);
+            }
         }
     }
 
@@ -359,6 +528,8 @@ public class GameHub : Hub
                 var player = room.Players.FirstOrDefault(p => p.ConnectionId == Context.ConnectionId);
                 if (player != null)
                 {
+                    RemoveCaptureConsentForConnection(room, Context.ConnectionId);
+
                     // Check if the leaving player is the room creator
                     bool isRoomCreator = player.ConnectionId == room.CreatorConnectionId;
                     _logger.LogInformation($"[LeaveRoom] leavingPlayer: {player.Name}, leavingConnectionId: {player.ConnectionId}, isRoomCreator: {isRoomCreator}");
@@ -655,6 +826,7 @@ public class GameHub : Hub
                 if (player != null)
                 {
                     _logger.LogInformation($"Found player {player.Name} in room {room.RoomId}, game state: {room.State}");
+                    RemoveCaptureConsentForConnection(room, Context.ConnectionId);
 
                     var isRoomCreator = player.ConnectionId == room.CreatorConnectionId;
                     if (isRoomCreator)
@@ -732,6 +904,64 @@ public class GameHub : Hub
         }
         
         await base.OnDisconnectedAsync(exception);
+    }
+
+    private static bool IsConnectionInRoom(GameRoom room, string connectionId)
+    {
+        return room.Players.Any(p => string.Equals(p.ConnectionId, connectionId, StringComparison.Ordinal));
+    }
+
+    private static string NormalizeCaptureMimeType(string? mimeType)
+    {
+        if (string.IsNullOrWhiteSpace(mimeType))
+        {
+            return string.Empty;
+        }
+
+        var normalized = mimeType.Split(';', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)[0]
+            .Trim()
+            .ToLowerInvariant();
+        return normalized;
+    }
+
+    private static void RemoveCaptureConsentForConnection(GameRoom room, string connectionId)
+    {
+        if (string.IsNullOrWhiteSpace(connectionId))
+        {
+            return;
+        }
+
+        room.CaptureConsentByConnectionId.Remove(connectionId);
+    }
+
+    private static void AddCaptureWithEviction(GameRoom room, MediaCaptureGalleryItem item)
+    {
+        while (room.RoundCaptures.Count >= MediaCaptureLimits.MaxCapturesPerRound ||
+               room.RoundCaptureTotalBytes + item.PayloadByteCount > MediaCaptureLimits.MaxTotalCaptureBytesInMemory)
+        {
+            if (room.RoundCaptures.Count == 0)
+            {
+                break;
+            }
+
+            var oldest = room.RoundCaptures[0];
+            room.RoundCaptures.RemoveAt(0);
+            room.RoundCaptureTotalBytes = Math.Max(0, room.RoundCaptureTotalBytes - oldest.PayloadByteCount);
+        }
+
+        room.RoundCaptures.Add(item);
+        room.RoundCaptureTotalBytes += item.PayloadByteCount;
+    }
+
+    private Task RejectCaptureUploadAsync(string? captureId, MediaCaptureRejection rejection)
+    {
+        var evt = new MediaCaptureRejectedEvent
+        {
+            CaptureId = captureId,
+            Rejection = rejection
+        };
+
+        return Clients.Caller.SendAsync(MediaCaptureHubEvents.MomentCaptureRejected, evt);
     }
 
     private static string NormalizeRoomId(string roomId)

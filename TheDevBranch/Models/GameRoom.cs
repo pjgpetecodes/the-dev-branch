@@ -35,6 +35,15 @@ public class GameRoom
 
     [JsonIgnore]
     public Dictionary<string, string> BurnModeLastNameByContext { get; set; } = new();
+
+    [JsonIgnore]
+    public Dictionary<string, MediaCaptureConsentUpdate> CaptureConsentByConnectionId { get; set; } = new();
+
+    [JsonIgnore]
+    public List<MediaCaptureGalleryItem> RoundCaptures { get; set; } = new();
+
+    [JsonIgnore]
+    public int RoundCaptureTotalBytes { get; set; }
 }
 
 public enum GameState
